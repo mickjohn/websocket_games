@@ -1,0 +1,1 @@
+A websocket server for hosting games that can be played in a browser.
