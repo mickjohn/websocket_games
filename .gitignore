@@ -1,0 +1,3 @@
+virtualenv/
+WebsocketGames.egg-info/
+*.pyc
