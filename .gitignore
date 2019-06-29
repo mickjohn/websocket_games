@@ -1,3 +1,4 @@
 virtualenv/
 WebsocketGames.egg-info/
 *.pyc
+.ropeproject/

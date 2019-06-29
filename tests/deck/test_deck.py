@@ -1,4 +1,4 @@
-from websocketgames.deck.deck import Deck, Card
+from websocketgames.deck import Deck, Card
 
 def test_can_create_deck():
     deck = Deck()
