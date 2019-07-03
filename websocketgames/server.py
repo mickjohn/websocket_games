@@ -5,76 +5,56 @@ import json
 import logging
 import websockets
 
-logging.basicConfig()
+from websocketgames.games.red_or_black import RedOrBlack
 
-STATE = {"value": 0}
-
-USERS = set()
+logger = logging.getLogger('root')
 
 '''
 incoming message format
 {
     'game_id': 'aaaa',
+    'game_type': 'RedOrBlack',
     'data': {...}
 }
 '''
 
+
+class Message():
+    def __init__(self, game_code, game_type, data):
+        self.game_code = game_code
+        self.game_type = game_type
+        self.data = data
+
+
 class WebsocketServer():
-    
+
     def __init__(self):
-        self.games = {} 
+        self.game_handlers = {
+            'redorblack': RedOrBlack()
+        }
 
-def state_event():
-    return json.dumps({"type": "state", **STATE})
+    async def handle_message(self, websocket, path):
+        logger.debug(f'path = {path}')
+        game_type = path.replace('/', '', 1)
+        try:
+            async for message in websocket:
+                try:
+                    data = json.loads(message)
+                except json.decoder.JSONDecodeError:
+                    logger.error(f'Invalid JSON')
 
+                try:
+                    message = Message(data['game_id'], game_type, data['data'])
+                except KeyError:
+                    logger.error(f'invalid message format: {data}')
 
-def users_event():
-    return json.dumps({"type": "users", "count": len(USERS)})
+                try:
+                    handler = self.game_handlers[message.game_type]
+                    await handler.handle_message(message, websocket)
+                except KeyError:
+                    logger.error(
+                        f"There is no handler for '{message.game_type}'")
 
-
-async def notify_state():
-    if USERS:  # asyncio.wait doesn't accept an empty list
-        message = state_event()
-        await asyncio.wait([user.send(message) for user in USERS])
-
-
-async def notify_users():
-    if USERS:  # asyncio.wait doesn't accept an empty list
-        message = users_event()
-        await asyncio.wait([user.send(message) for user in USERS])
-
-
-async def register(websocket):
-    USERS.add(websocket)
-    await notify_users()
-
-
-async def unregister(websocket):
-    USERS.remove(websocket)
-    await notify_users()
-
-
-async def counter(websocket, path):
-    # register(websocket) sends user_event() to websocket
-    await register(websocket)
-    try:
-        await websocket.send(state_event())
-        async for message in websocket:
-            data = json.loads(message)
-            if data["action"] == "minus":
-                STATE["value"] -= 1
-                await notify_state()
-            elif data["action"] == "plus":
-                STATE["value"] += 1
-                await notify_state()
-            else:
-                pass
-                # logging.error("unsupported event: {}", data)
-    finally:
-        await unregister(websocket)
-
-
-start_server = websockets.serve(counter, "localhost", 6789)
-
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+        finally:
+            await self.game_handlers[game_type].handle_close(websocket)
+            logger.debug('Closing websocket connection')

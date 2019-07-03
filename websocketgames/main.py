@@ -1,9 +1,21 @@
-def hello():
-    print('hello')
-    return 'hello'
+import logging
+import sys
+import websockets
+import asyncio
+import coloredlogs
 
-def foo():
-    return 'foo'
+from websocketgames.server import WebsocketServer
 
-if __name__ == '__main__':
-    hello()
+# Configure Logger
+handler = logging.StreamHandler()
+logger = logging.getLogger('root')
+logger.addHandler(handler)
+fmt = '%(asctime)s %(name)s:%(module)s %(message)s'
+coloredlogs.install(logger=logger, level='DEBUG', fmt=fmt)
+
+
+logger.info('Starting server')
+server = WebsocketServer()
+start_server = websockets.serve(server.handle_message, "localhost", 8080)
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
