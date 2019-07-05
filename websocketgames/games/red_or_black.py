@@ -3,6 +3,7 @@ from websocketgames.deck import Deck
 from enum import Enum, auto
 import logging
 import uuid
+from sched import scheduler
 
 logger = logging.getLogger('root')
 
@@ -92,6 +93,12 @@ class GameStates(Enum):
 
 
 class RedOrBlackGame():
+    '''
+    The 'owner' is the first person to join the game. The client should be 
+    implemented in a way that ensures that the creator of the game is the 
+    first person to join. The owner is the only player who can start and
+    restart the game.
+    '''
 
     def __init__(self, game_code):
         self.game_code = game_code
@@ -101,6 +108,7 @@ class RedOrBlackGame():
         self.state = GameStates.LOBBY
         self.owner = None
         self.order = []
+        self.deck = Deck(shuffled=True)
         self.stats = {
             'outcomes': {}
         }
@@ -141,13 +149,90 @@ class RedOrBlackGame():
 
         self.state = GameStates.PLAYING
 
+    def draw_card(self):
+        return self.deck.draw_card()
+
+    def get_card_colour(self, card):
+        if card.suit == 'Spades' or card.suit == 'Clubs':
+            return 'Black'
+        else:
+            return 'Red'
+
+    def can_play_turn(self, user_id):
+        if not self.is_playing():
+            logger.error("Game is not in playing state")
+            raise WrongStateException("Game is not in playing state")
+
+        index = self.turn % len(self.order)
+        current_player = self.order[index]
+        player = self.id_map[user_id]
+        if user_id != current_player.user_id:
+            logger.error(
+                f"It's not the go of {player.username}, it's {current_player.username}")
+            raise NotPlayersTurn(
+                f"It's not the go of {player.username}, it's {current_player.username}")
+
+        return True
+
+    def play_turn(self, user_id, guess):
+        self.can_play_turn(user_id)
+        player = self.id_map[user_id]
+        card = self.deck.draw_card()
+        colour = self.get_card_colour(card)
+        correct = guess == colour
+
+        self.turn += 1
+
+        self.stats['outcomes'][self.turn] = {
+            'player': player,
+            'turn': self.turn,
+            'guess': guess,
+            'outcome': correct,
+            'card': card,
+        }
+
+        if len(self.deck.cards) == 0:
+            self.end_game()
+
+        return correct
+
+    def end_game(self):
+        self.state = GameStates.FINISHED
+
+    def restart_game(self, user_id):
+        self.state = GameStates.PLAYING
+        self.turn = 0
+        self.deck = Deck(shuffled=True)
+        self.stats = {
+            'outcomes': {}
+        }
+        self.start_game(user_id)
+
+    def remove_player(self, user_id):
+        if user_id in self.id_map[user_id]:
+            p = self.id_map[user_id]
+            del(self.id_map[user_id])
+            del(self.usernames_map[p.username])
+            if p in self.order:
+                index = self.order.index(p)
+                del(self.order[index])
+
 
 class UserAlreadyExists(Exception):
+    pass
+
+
+class NotPlayersTurn(Exception):
     pass
 
 
 class UserDoesNotExist(Exception):
     pass
 
+
 class UserNotAllowedToStart(Exception):
+    pass
+
+
+class WrongStateException(Exception):
     pass
