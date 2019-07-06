@@ -1,9 +1,5 @@
-# WS server example that synchronizes state across clients
-
-import asyncio
 import json
 import logging
-import websockets
 
 from websocketgames.games.red_or_black import RedOrBlack
 

@@ -3,7 +3,9 @@ from websocketgames.deck import Deck
 from enum import Enum, auto
 import logging
 import uuid
-from sched import scheduler
+import json
+from collections import defaultdict
+from itertools import groupby
 
 logger = logging.getLogger('root')
 
@@ -13,6 +15,10 @@ def send_game_created(websocket, game_code):
         'type': 'GameCreated',
         'code': game_code,
     }))
+
+
+def send(websocket, data):
+    return websocket.send(json.dumps(data))
 
 
 def send_error_message(websocket, summary, desc=''):
@@ -94,8 +100,8 @@ class GameStates(Enum):
 
 class RedOrBlackGame():
     '''
-    The 'owner' is the first person to join the game. The client should be 
-    implemented in a way that ensures that the creator of the game is the 
+    The 'owner' is the first person to join the game. The client should be
+    implemented in a way that ensures that the creator of the game is the
     first person to join. The owner is the only player who can start and
     restart the game.
     '''
@@ -134,7 +140,7 @@ class RedOrBlackGame():
         self.usernames_map[player.username] = player
         self.id_map[user_id] = player
         self.order.append(player)
-        if self.owner == None:
+        if self.owner is None:
             self.owner = player
         return user_id
 
@@ -216,6 +222,70 @@ class RedOrBlackGame():
             if p in self.order:
                 index = self.order.index(p)
                 del(self.order[index])
+
+    def make_player_inactive(self, user_id):
+        self.id_map[user_id].active = False
+
+    def reactivate_player(self, user_id):
+        if user_id in self.id_map:
+            p = self.id_map[user_id]
+            if not p.active:
+                p.active = True
+                logger.info(f"Reactivated user {p.username}")
+            else:
+                logger.error(
+                    f"User {p.username} is already active, not doing anything")
+        else:
+            logger.error(f"id {user_id} not in this game")
+
+    def _get_ranks(self, usernames):
+        '''
+        given a dict of usernames this will return a list of tuples:
+        [('score', 'usernames with that score')]
+        '''
+        score_dict = defaultdict(list)
+
+        # Add all of the games users to the list
+        # Then subtract their score by 1, poeple with 0
+        # simply didn't score.
+        usernames = sorted(usernames + list(self.usernames_map.keys()))
+
+        # Build dict of {'occurences': [names]}
+        for username, occurences in groupby(usernames):
+            score = len(list(occurences)) - 1
+            score_dict[score].append(username)
+
+        # Sort the keys
+        scores = sorted(score_dict.keys())
+
+        # Build list of tuples
+        score_list = [(score, score_dict[score]) for score in scores]
+        return score_list
+
+    def present_stats(self):
+        outcomes = self.stats['outcomes']
+        turns = len(outcomes)
+        pretty_stats = {}
+        pretty_stats['turns'] = turns
+        right = []
+        red_guesses = 0
+        correct_guesses = 0
+        for __turn, outcome in outcomes.items():
+            # List of usernames that got their turn right/wrong
+            if outcome['outcome']:
+                correct_guesses += 1
+                right.append(outcome['player'].username)
+
+            # Counter of how many guesses were red
+            if outcome['guess'] == 'Red':
+                red_guesses += 1
+
+        pretty_stats['right_guesses'] = len(right)
+        pretty_stats['wrong_guesses'] = turns - len(right)
+        pretty_stats['red'] = red_guesses
+        pretty_stats['black'] = turns - red_guesses
+        pretty_stats['scores'] = self._get_ranks(right)
+        return pretty_stats
 
 
 class UserAlreadyExists(Exception):

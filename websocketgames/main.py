@@ -1,5 +1,4 @@
 import logging
-import sys
 import websockets
 import asyncio
 import coloredlogs

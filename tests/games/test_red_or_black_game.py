@@ -1,5 +1,6 @@
 from websocketgames.games import red_or_black
-from websocketgames.games.red_or_black import RedOrBlackGame, GameStates
+from websocketgames.games.red_or_black import RedOrBlackGame, GameStates, Player
+from websocketgames.deck import Card
 import pytest
 
 
@@ -109,9 +110,73 @@ def test_restart_game():
     game.start_game(player1)
     del(game.deck.cards[1:])
     game.play_turn(player1, 'Black')
-    assert game.state == GameStates.FINISHED    
+    assert game.state == GameStates.FINISHED
     game.restart_game(player1)
     assert game.state == GameStates.PLAYING
     assert game.turn == 0
     assert len(game.stats['outcomes']) == 0
-    assert len(game.deck.cards) == 52    
+    assert len(game.deck.cards) == 52
+
+
+def test_present_stats():
+    stats = {
+        'outcomes': {
+            1: {
+                'player': Player('mickjohn', ''),
+                'turn': 1,
+                'guess': 'Red',
+                'outcome': True,
+                'card': Card('1', 'Clubs'),
+            },
+            2: {
+                'player': Player('michael', ''),
+                'turn': 2,
+                'guess': 'Red',
+                'outcome': False,
+                'card': Card('1', 'Clubs'),
+            },
+            3: {
+                'player': Player('john', ''),
+                'turn': 3,
+                'guess': 'Black',
+                'outcome': False,
+                'card': Card('1', 'Clubs'),
+            },
+            4: {
+                'player': Player('mickjohn', ''),
+                'turn': 4,
+                'guess': 'Red',
+                'outcome': True,
+                'card': Card('1', 'Clubs'),
+            },
+        }
+    }
+    game = RedOrBlackGame('AAAA')
+    game.stats = stats
+    [game.add_player(n) for n in ['mickjohn', 'michael', 'john']]
+    pretty_stats = game.present_stats()
+    assert pretty_stats['wrong_guesses'] == 2
+    assert pretty_stats['right_guesses'] == 2
+    assert pretty_stats['red'] == 3
+    assert pretty_stats['black'] == 1
+    assert pretty_stats['turns'] == 4
+    assert pretty_stats['scores'][0] == (0, ['john', 'michael'])
+    assert pretty_stats['scores'][1] == (2, ['mickjohn'])
+
+
+def test_get_ranks():
+    game = RedOrBlackGame('AAAA')
+    players = ['mick', 'jane', 'dave', 'peter', 'noscore', 'noscore2']
+    for p in players:
+        game.add_player(p)
+
+    correct_guesses = ['mick', 'jane', 'mick',
+                       'jane', 'dave', 'dave', 'mick', 'peter']
+
+    expected = [
+        (0, ['noscore', 'noscore2']),
+        (1, ['peter']),
+        (2, ['dave', 'jane']),
+        (3, ['mick']),
+    ]
+    assert game._get_ranks(correct_guesses) == expected

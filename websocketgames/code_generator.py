@@ -1,18 +1,30 @@
 import random
-from websocketgames import games
 
 
 class GameNotFound(Exception):
     pass
 
 
-_MAX_CODE = 456975  # i.e 456975 == zzzz
-_MIN_CODE = 17576  # i.e baaa (smallets 4 'digit' code)
-_MODULUS = 97  # Games will be identified by their modulus. Modulus of 97 allows 97 differnt game types
-_BASE = 26  # Base 26 i.e A-Z
+# i.e 456975 == zzzz
+_MAX_CODE = 456975
+
+# i.e baaa (smallest 4 'digit' code)
+_MIN_CODE = 17576
+
+# Games will be identified by their modulus. Modulus of 97 allows 97 different
+# game types
+_MODULUS = 97
+
+# Base 26 i.e A-Z
+_BASE = 26
+
+# The digits to use, A-Z
 _DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
+# Lowest range for generating random number
 _LOWER_BOUND = _MIN_CODE + _MODULUS
+
+# Highest range for generating random number
 _HIGHER_BOUND = _MAX_CODE - _MODULUS + 1
 
 # When divided by the MODULUS, the remainder will identify the game
