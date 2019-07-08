@@ -1,5 +1,5 @@
-from websocketgames.games import red_or_black
-from websocketgames.games.red_or_black import RedOrBlackGame, GameStates, Player
+from websocketgames.games.red_or_black import game as red_or_black_game
+from websocketgames.games.red_or_black.game import RedOrBlackGame, GameStates, Player
 from websocketgames.deck import Card
 import pytest
 
@@ -18,7 +18,7 @@ def test_add_user():
 def test_add_user_cant_have_duplicate_usernames():
     game = RedOrBlackGame('AAAA')
     game.add_player('mickjohn')
-    with pytest.raises(red_or_black.UserAlreadyExists) as e:
+    with pytest.raises(red_or_black_game.UserAlreadyExists) as e:
         game.add_player('mickjohn')
     assert "User mickjohn already exists in AAAA" in str(e.value)
 
@@ -33,7 +33,7 @@ def test_start_game():
 
 def test_start_game_raises_error_if_user_doesnt_exist():
     game = RedOrBlackGame('AAAA')
-    with pytest.raises(red_or_black.UserDoesNotExist) as e:
+    with pytest.raises(red_or_black_game.UserDoesNotExist) as e:
         game.start_game('id')
     assert "No id id in game AAAA" == str(e.value)
 
@@ -42,7 +42,7 @@ def test_start_game_only_owner_can_start():
     game = RedOrBlackGame('AAAA')
     __owner_id = game.add_player('mickjohn')
     other_id = game.add_player('qwert')
-    with pytest.raises(red_or_black.UserNotAllowedToStart) as e:
+    with pytest.raises(red_or_black_game.UserNotAllowedToStart) as e:
         game.start_game(other_id)
     assert "User qwert is not allowed to start the game" == str(e.value)
 
@@ -61,7 +61,7 @@ def test_can_play_turn_fails_when_not_players_turn():
     player2 = game.add_player('player2')
     game.start_game(player1)
     assert game.can_play_turn(player1)
-    with pytest.raises(red_or_black.NotPlayersTurn) as e:
+    with pytest.raises(red_or_black_game.NotPlayersTurn) as e:
         game.can_play_turn(player2)
     assert "It's not the go of player2, it's mickjohn" == str(e.value)
 
@@ -69,7 +69,7 @@ def test_can_play_turn_fails_when_not_players_turn():
 def test_can_play_turn_fails_game_is_not_in_progress():
     game = RedOrBlackGame('AAAA')
     game.add_player('mickjohn')
-    with pytest.raises(red_or_black.WrongStateException) as e:
+    with pytest.raises(red_or_black_game.WrongStateException) as e:
         game.can_play_turn('')
     assert "Game is not in playing state" == str(e.value)
 
