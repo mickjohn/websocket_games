@@ -3,3 +3,4 @@ WebsocketGames.egg-info/
 *.pyc
 .ropeproject/
 scratch.py
+.vscode/
