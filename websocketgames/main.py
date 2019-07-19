@@ -7,7 +7,7 @@ from websocketgames.server import WebsocketServer
 
 # Configure Logger
 handler = logging.StreamHandler()
-logger = logging.getLogger('root')
+logger = logging.getLogger('websocketgames')
 logger.addHandler(handler)
 fmt = '%(asctime)s %(name)s:%(module)s %(message)s'
 coloredlogs.install(logger=logger, level='DEBUG', fmt=fmt)

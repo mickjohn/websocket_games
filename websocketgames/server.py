@@ -1,9 +1,9 @@
 import json
 import logging
 
-from websocketgames.games.red_or_black import RedOrBlack
+from websocketgames.games.red_or_black.handler import RedOrBlack
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('websocketgames')
 
 '''
 incoming message format
@@ -32,25 +32,25 @@ class WebsocketServer():
     async def handle_message(self, websocket, path):
         logger.debug(f'path = {path}')
         game_type = path.replace('/', '', 1)
+        logger.debug(f'Using "{game_type}" handler to handle message')
+        
         try:
             async for message in websocket:
                 try:
                     data = json.loads(message)
                 except json.decoder.JSONDecodeError:
-                    logger.error(f'Invalid JSON')
+                    raise Exception('Invalid JSON')
 
                 try:
-                    message = Message(data['game_id'], game_type, data['data'])
+                    handler = self.game_handlers[game_type]
+                    await handler.handle_message(data, websocket)
                 except KeyError:
-                    logger.error(f'invalid message format: {data}')
+                    raise Exception(f"There is no handler for '{message.game_type}'")
 
-                try:
-                    handler = self.game_handlers[message.game_type]
-                    await handler.handle_message(message, websocket)
-                except KeyError:
-                    logger.error(
-                        f"There is no handler for '{message.game_type}'")
+        except Exception as e:
+            logger.error(str(e))
 
         finally:
-            await self.game_handlers[game_type].handle_close(websocket)
+            # await self.game_handlers[game_type].handle_close(websocket)
+            await websocket.close()
             logger.debug('Closing websocket connection')
