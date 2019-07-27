@@ -1,9 +1,7 @@
-from websocketgames import code_generator
 from websocketgames.deck import Deck
 from enum import Enum, auto
 import logging
 import uuid
-import json
 from collections import defaultdict
 from itertools import groupby
 
@@ -22,6 +20,11 @@ class Player():
 
     def __repr__(self):
         return str(self.__dict__)
+
+    def __eq__(self, other):
+        if isinstance(other, Player):
+            return self.__dict__ == other.__dict__
+        return False
 
 
 class GameStates(Enum):
@@ -112,6 +115,11 @@ class RedOrBlackGame():
 
         return True
 
+    def _get_current_player(self):
+        index = self.turn % len(self.order)
+        current_player = self.order[index]
+        return current_player
+
     def play_turn(self, user_id, guess):
         self.can_play_turn(user_id)
         player = self.id_map[user_id]
@@ -147,28 +155,78 @@ class RedOrBlackGame():
         self.start_game(user_id)
 
     def remove_player(self, user_id):
-        if user_id in self.id_map[user_id]:
+        return_messages = []
+        if user_id in self.id_map:
             p = self.id_map[user_id]
+            logger.debug(f'Removing player {p.username}')
+            return_messages.append({
+                'type': 'PlayerLeft',
+                'player': p
+            })
             del(self.id_map[user_id])
             del(self.usernames_map[p.username])
-            if p in self.order:
+            if not len(self.id_map):
+                logger.debug('Ending game due to lack of players')
+                self.end_game()
+            elif p in self.order:
                 index = self.order.index(p)
                 del(self.order[index])
+        return return_messages
 
     def make_player_inactive(self, user_id):
-        self.id_map[user_id].active = False
+        return_messages = []
+        if user_id in self.id_map:
+            player = self.id_map[user_id]
+            logger.debug(f'making player {player.username} inactive')
+            player.active = False
+            return_messages.append({
+                'type': 'PlayerDisconnected',
+                'player': player
+            })
+
+            if len(self.id_map) == 1:
+                logger.debug(f"'{player.username}' is the last player in the"
+                             "game. Stopping the game")
+                self.end_game()
+                return_messages.append({'type': 'GameStopped'})
+
+            # Get the current player to check if it's the player that has
+            # become inactive
+            current_active_player = self._get_current_player()
+
+            # Remove the inactive player from the game order
+            index = self.order.index(player)
+            del(self.order[index])
+
+            if current_active_player == player and self.is_playing():
+                logger.debug(
+                    f'Current player is becoming inactive, changing player')
+                next_active_player = self._get_current_player()
+                return_messages.append({
+                    'type': 'PlayerTurnChanged',
+                    'player': next_active_player
+                })
+
+        return return_messages
 
     def reactivate_player(self, user_id):
+        return_messages = []
         if user_id in self.id_map:
             p = self.id_map[user_id]
             if not p.active:
                 p.active = True
+                self.order.append(p)
                 logger.info(f"Reactivated user {p.username}")
+                return_messages.append({
+                    'type': 'PlayerRejoined',
+                    'player': p,
+                })
             else:
                 logger.error(
                     f"User {p.username} is already active, not doing anything")
         else:
             logger.error(f"id {user_id} not in this game")
+        return return_messages
 
     def _get_ranks(self, usernames):
         '''

@@ -20,41 +20,37 @@ function init() {
     websockerUrl = $('#websocket_url');
     messageToSend = $('#submit_message_textbox');
 
-    connectButton.click(function() {
+    connectButton.click(function () {
         console.log("Connect button clicked");
         var addr = websockerUrl.val();
         createWebsocket(addr);
     });
 
-    disconnectButton.click(function() {
+    disconnectButton.click(function () {
         console.log("Closing websocket");
         websocketConn.close();
         websocketConn = null;
     });
 
-    submitMessageButton.click(function(){
+    submitMessageButton.click(function () {
         if (websocketConn !== null) {
-          var msg = messageToSend.val();
+            var msg = messageToSend.val();
             websocketConn.send(msg);
             // messagesTextArea.val('');
         }
     });
 
-    clearMessagesButton.click(function(){
+    clearMessagesButton.click(function () {
         messagesTextArea.val('');
     });
 
+    // Set URL Buttons
+    $('#red_or_black_url').click(function () { _set_url_endpoint('redorblack'); });
+
     // Helper Buttons
-    $('#create_game_json').click(function(){
-        var data = {
-            "game_id": "-1",
-            "player_id": "ff2019",
-            "content": {
-                "msg_type": "CreateGame"
-            }
-        };
-        messageToSend.val(JSON.stringify(data));
-    });
+    $('#create_game_button').click(function () { _create_game_data(); });
+    $('#add_player_button').click(function () { _add_user_data(); });
+
 
 }
 
@@ -99,3 +95,36 @@ function writeMessage(message) {
 }
 
 window.addEventListener("load", init, false);
+
+function _create_game_data() {
+    var data = {
+        "game_id": "",
+        "type": "CreateGame",
+        "data": {}
+    };
+    messageToSend.val(JSON.stringify(data, null, 2));
+}
+
+function _add_user_data() {
+    username = $('#add_player_username').val();
+    game_id = $('#add_player_game_id').val();
+    var data = {
+        "game_id": `${game_id}`,
+        "type": "AddPlayer",
+        "data": {
+            "username": `${username}`
+        }
+    };
+    messageToSend.val(JSON.stringify(data, null, 2));
+}
+
+function _set_url_endpoint(endpoint) {
+    url_text = $('#websocket_url').val()
+    url = new URL(url_text)
+    port = ''
+    if (url.port != '') {
+        port = `:${url.port}`
+    }
+    new_url = `${url.protocol}//${url.hostname}${port}/${endpoint}`
+    $('#websocket_url').val(new_url)
+}

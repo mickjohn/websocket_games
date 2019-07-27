@@ -1,0 +1,7 @@
+fieldset {
+    display: inline
+}
+
+#websocket_url {
+    width: 300px;
+}

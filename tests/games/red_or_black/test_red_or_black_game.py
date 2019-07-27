@@ -180,3 +180,82 @@ def test_get_ranks():
         (3, ['mick']),
     ]
     assert game._get_ranks(correct_guesses) == expected
+
+
+def test_can_make_player_inactive():
+    game = RedOrBlackGame('AAAA')
+    uid = game.add_player('mickjohn')
+    p = game.id_map[uid]
+    assert p.active
+    resp = game.make_player_inactive(uid)
+    assert not p.active
+    assert resp == [
+        {'type': 'PlayerDisconnected', 'player': p},
+        {'type': 'GameStopped'}
+    ]
+
+
+def test_player_order_changes_if_current_player_becomes_inactive():
+    game = RedOrBlackGame('AAAA')
+    p1_uid = game.add_player('mickjohn')
+    p2_uid = game.add_player('player2')
+    p1 = game.id_map[p1_uid]
+    p2 = game.id_map[p2_uid]
+    game.start_game(p1_uid)
+    assert game._get_current_player() == p1
+    resp = game.make_player_inactive(p1_uid)
+    assert game._get_current_player() == p2
+    assert resp == [
+        {'type': 'PlayerDisconnected', 'player': p1},
+        {'type': 'PlayerTurnChanged', 'player': p2}
+    ]
+
+
+def test_game_ends_if_last_player_becomes_inactive():
+    game = RedOrBlackGame('AAAA')
+    uid = game.add_player('mickjohn')
+    resp = game.make_player_inactive(uid)
+    player = game.id_map[uid]
+    assert resp == [
+        {'type': 'PlayerDisconnected', 'player': player},
+        {'type': 'GameStopped'},
+    ]
+
+
+def test_can_remove_player():
+    game = RedOrBlackGame('AAAA')
+    uid1 = game.add_player('mickjohn')
+    uid2 = game.add_player('qwerty')
+    assert len(game.id_map) == 2
+    assert len(game.usernames_map) == 2
+    assert len(game.order) == 2
+    game.remove_player(uid1)
+    assert len(game.id_map) == 1
+    assert len(game.usernames_map) == 1
+    assert len(game.order) == 1
+
+
+def test_removing_last_player_ends_game():
+    game = RedOrBlackGame('AAAA')
+    uid = game.add_player('mickjohn')
+    p = game.id_map[uid]
+    game.start_game(uid)
+    assert game.is_playing()
+    resp = game.remove_player(uid)
+    assert game.is_finished()
+    assert resp == [{'type': 'PlayerLeft', 'player': p}]
+
+
+def test_can_reactivate_player():
+    game = RedOrBlackGame('AAAA')
+    p1_uid = game.add_player('mickjohn')
+    game.add_player('qwerty')
+    p1 = game.id_map[p1_uid]
+    game.start_game(p1_uid)
+    game.make_player_inactive(p1_uid)
+    assert len(game.id_map) == 2
+    assert len(game.order) == 1
+    resp = game.reactivate_player(p1_uid)
+    assert resp == [{'type': 'PlayerRejoined', 'player': p1}]
+    assert len(game.id_map) == 2
+    assert len(game.order) == 2

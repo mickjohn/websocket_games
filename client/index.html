@@ -5,18 +5,34 @@
     <title>title</title>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="script.js"></script>
+    <link rel="stylesheet" type="text/css" href="index.css" media="screen" />
 </head>
 
 <body>
     <h2>WebSocket Tester</h2>
     <div>
+        <button id="red_or_black_url">Red Or Black</button>
         <form>
             <input type="text" id="websocket_url" value="ws://127.0.0.1:8080"></input>
             <button id="websocket_connect" type="button">Connect</button>
             <button id="websocket_disconnect" type="button">Disconnect</button>
         </form>
         <h3> Send Message </h3>
-        <button id="create_game_json"> Create Game </button>
+
+        <!-- Helper Buttons-->
+        <fieldset>
+            <legend>Create Game</legend>
+            <button id="create_game_button"> Create Game </button>
+        </fieldset>
+
+        <fieldset>
+            <legend>Add Player</legend>
+            <input id="add_player_game_id" type="text" placeholder="game id"></input>
+            <input id="add_player_username" type="text" placeholder="username"></input>
+            <button id="add_player_button"> Add Player </button>
+        </fieldset>
+        <!-- END Helper Buttons-->
+
         <form>
             <h3>Send</h3>
             <textarea id="submit_message_textbox" rows="10" cols="50"></textarea>
