@@ -4,7 +4,6 @@ from collections import defaultdict
 import logging
 from threading import Thread, Lock
 import time
-import json
 import jsonpickle
 
 logger = logging.getLogger('websocketgames')
@@ -169,16 +168,6 @@ class RedOrBlack():
                 websockets.append(client.websocket)
         logger.debug(f'brdcst skts = {websockets}')
         return websockets
-
-    # def _get_websockets_for_game_bar_one(self, game_id, websocket):
-    #     websockets = []
-    #     for client in list(self.clients.values()):
-    #         if client.game_id == game_id:
-    #             logger.debug(f'adding websocket to websockets')
-    #             if client.websocket != websocket:
-    #                 websockets.append(client.websocket)
-    #     logger.debug(f'brdcst skts = {websockets}')
-    #     return websockets
 
     async def handle_close(self, websocket):
         if websocket not in self.websockets:
