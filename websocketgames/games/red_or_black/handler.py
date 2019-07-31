@@ -18,6 +18,7 @@ MESSAGE_TYPES = [
 SENDABLE_MESSAGES = [
     'Error',
     'PlayerAdded',
+    'YouJoined',
     'GameCreated',
     'Debug',
 ]
@@ -35,6 +36,26 @@ SENDABLE_MESSAGES = SENDABLE_MESSAGES + INTERNAL_MESSAGES
 MAX_INACTIVE_TIME = 10
 THREAD_PAUSE_TIME = 5
 
+SENSITIVE = [
+    'user_id'
+]
+
+
+def _remove_sensitive_info_from_message(msg):
+    '''
+    If broadcasting a message to all clients it's a good idea to remove the
+    user ID from the message, since it's only needed by the one user
+    '''
+    keys_to_remove = []
+    for k, v in msg.items():
+        if k in SENSITIVE:
+            keys_to_remove.append(k)
+        if isinstance(v, dict):
+            _remove_sensitive_info_from_message(v)
+
+    for k in keys_to_remove:
+        del(msg[k])
+
 
 class Client():
     '''
@@ -45,6 +66,11 @@ class Client():
         self.user_id = user_id
         self.game_id = game_id
         self.websocket = websocket
+
+    def __eq__(self, other):
+        if isinstance(other, Client):
+            return self.__dict__ == other.__dict__
+        return False
 
 
 class Message():
@@ -82,14 +108,24 @@ async def send_message(websocket, msg_type, **kwargs):
         'type': msg_type,
         **kwargs
     }
+
+    # Convert dict to json
     json_msg = jsonpickle.encode(msg, unpicklable=False)
-    await websocket.send(json_msg)
+
+    # Convert back to dict. This ensures that every object in the dict is made
+    # is made of basic types (aka json types)
+    dict_msg = jsonpickle.decode(json_msg)
+    if 'broadcast' in dict_msg and dict_msg['broadcast']:
+        _remove_sensitive_info_from_message(dict_msg)
+
+    # Convert the back to json
+    await websocket.send(jsonpickle.encode(dict_msg, unpicklable=False))
 
 
-async def broadcast_message(websockets, msg_type, **kwargs):
+async def broadcast_message(websockets, msg_type, skip=[], **kwargs):
     for websocket in websockets:
-        if websocket.open:
-            await send_message(websocket, msg_type, **kwargs)
+        if websocket.open and websocket not in skip:
+            await send_message(websocket, msg_type, **kwargs, broadcast=True)
 
 
 class RedOrBlack():
@@ -98,14 +134,11 @@ class RedOrBlack():
         # Map of 'game id -> game'
         self.games = {}
 
-        # Map of 'player_id -> (websocket, game_id)'
-        self.players_id = {}
-
-        # Map of 'websocket -> (user id, game_id)
-        self.players_websocket = {}
-
-        # Mapf of user_id -> Client
+        # Map of user_id -> Client
         self.clients = {}
+
+        # Map of websocket -> Client
+        self.websockets = {}
 
         # Set of players that have disconnected
         self.inactive_player_ids = set()
@@ -130,25 +163,35 @@ class RedOrBlack():
 
     def _get_websockets_for_game(self, game_id):
         websockets = []
-        for websocket, gid in list(self.players_id.values()):
-            if gid == game_id:
+        for client in list(self.clients.values()):
+            if client.game_id == game_id:
                 logger.debug(f'adding websocket to websockets')
-                websockets.append(websocket)
+                websockets.append(client.websocket)
         logger.debug(f'brdcst skts = {websockets}')
         return websockets
 
+    # def _get_websockets_for_game_bar_one(self, game_id, websocket):
+    #     websockets = []
+    #     for client in list(self.clients.values()):
+    #         if client.game_id == game_id:
+    #             logger.debug(f'adding websocket to websockets')
+    #             if client.websocket != websocket:
+    #                 websockets.append(client.websocket)
+    #     logger.debug(f'brdcst skts = {websockets}')
+    #     return websockets
+
     async def handle_close(self, websocket):
-        if websocket not in self.players_websocket:
+        if websocket not in self.websockets:
             return
         logger.debug("Handling websocket disconnection")
-        # Check if player is in game
-        (user_id, game_id) = self.players_websocket[websocket]
-        if user_id and game_id:
-            game = self.games[game_id]
-            logger.debug(f"Adding {user_id} to inactive IDs")
-            self.inactive_player_ids.add(user_id)
-            resp = game.make_player_inactive(user_id)
-            broadcast_sockets = self._get_websockets_for_game(game_id)
+        client = self.websockets[websocket]
+        if client:
+            game = self.games[client.game_id]
+            logger.debug(f"Adding {client.user_id} to inactive IDs")
+            self.inactive_player_ids.add(client.user_id)
+            del(self.websockets[websocket])
+            resp = game.make_player_inactive(client.user_id)
+            broadcast_sockets = self._get_websockets_for_game(client.game_id)
             for msg in resp:
                 await broadcast_message(
                     broadcast_sockets,
@@ -178,6 +221,8 @@ class RedOrBlack():
             username = message.data['username']
             try:
                 player = self._add_player(username, game_id, websocket)
+                broadcast_sockets = self._get_websockets_for_game(game_id)
+                await broadcast_message(broadcast_sockets, 'PlayerAdded', player=player, skip=[websocket])
                 await send_message(websocket, 'PlayerAdded', player=player)
             except UserAlreadyExists:
                 await send_message(websocket,
@@ -194,9 +239,8 @@ class RedOrBlack():
         self.mutex.acquire()
         user_id = game.add_player(username)
         player = game.id_map[user_id]
-        self.players_id[user_id] = (websocket, game_id)
-        self.players_websocket[websocket] = (user_id, game_id)
         client = Client(user_id, game_id, websocket)
+        self.websockets[websocket] = client
         self.clients[user_id] = client
         self.mutex.release()
         return player
@@ -210,7 +254,7 @@ class RedOrBlack():
         while True:
             self.mutex.acquire()
             for player_id in self.inactive_player_ids:
-                if player_id not in self.players_id:
+                if player_id not in self.clients:
                     logger.debug(f"{player_id} has rejoined!")
                     self.inactive_player_counter[player_id] = 0
                 else:
@@ -223,9 +267,9 @@ class RedOrBlack():
             for player_id, inactive_time in self.inactive_player_counter.items():
                 if inactive_time >= MAX_INACTIVE_TIME:
                     # Remove player from their game
-                    (__websocket, game_id) = self.players_id[player_id]
-                    if game_id:
-                        game = self.games[game_id]
+                    client = self.clients[player_id]
+                    if client:
+                        game = self.games[client.game_id]
                         player = game.id_map[player_id]
                         logger.info(
                             f"Removing {player.username} from game due to inactivity")

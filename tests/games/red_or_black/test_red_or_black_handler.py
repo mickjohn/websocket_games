@@ -1,23 +1,70 @@
-from websocketgames.games.red_or_black.handler import RedOrBlack, Message
+from websocketgames.games.red_or_black import handler
+from websocketgames.games.red_or_black.handler import RedOrBlack, Message, Client
 from websocketgames import code_generator
 import pytest
 from pytest_asyncio.plugin import asyncio
-import json
+from pytest import fixture
+# import json
+import jsonpickle
 
 code_generator.GAME_MODULUS_TABLE = {
     'RedOrBlack': 0
 }
 
 
+@fixture
+def set_sensitive_array():
+    handler.SENSITIVE = [
+        'user_id'
+    ]
+
+
 class MockWebsocket():
     def __init__(self):
         self.message_stack = []
+        self.broadcast_stack = []
+        self.open = True
 
     async def send(self, s):
-        self.message_stack.append(s)
+        # decode message to check if it's a broadcast message or not
+        msg_dict = jsonpickle.decode(s)
+        if 'broadcast' in msg_dict and msg_dict['broadcast']:
+            self.broadcast_stack.append(s)
+        else:
+            self.message_stack.append(s)
 
     def close(self):
-        pass
+        self.open = False
+
+
+def test_remove_sensitive_info_from_message(set_sensitive_array):
+    msg = {
+        'type': 'TestMessage',
+        'user_id': '111-222-333',
+        'nested': {
+            'x': 123,
+            'user_id': '4444-5555'
+        }
+    }
+
+    # msg = {
+    #     'type': 'PlayerAdded',
+    #     'broadcast': True,
+    #     'player': {
+    #         'username': 'mickjohn',
+    #         'active': True
+    #     }
+    # }
+
+    expected_msg = {
+        'type': 'TestMessage',
+        'nested': {
+            'x': 123
+        }
+    }
+
+    handler._remove_sensitive_info_from_message(msg)
+    msg == expected_msg
 
 
 @pytest.mark.asyncio
@@ -36,7 +83,8 @@ async def test_red_or_black_handler_can_create_game():
         'type': 'GameCreated',
         'game_code': game_code
     }
-    assert mws.message_stack[0] == json.dumps(expected_message)
+    assert mws.message_stack[0] == jsonpickle.encode(
+        expected_message, unpicklable=False)
 
 
 @pytest.mark.asyncio
@@ -53,7 +101,8 @@ async def test_red_or_black_handler_error_if_game_does_not_exist():
         'type': 'Error',
         'error': 'no RedOrBlack game with code does not exist exists'
     }
-    assert mws.message_stack[0] == json.dumps(expected_message)
+    assert mws.message_stack[0] == jsonpickle.encode(
+        expected_message, unpicklable=False)
 
 
 @pytest.mark.asyncio
@@ -72,13 +121,19 @@ async def test_red_or_black_handler_can_add_player_to_game():
     }
     await handler.handle_message(message, mws)
     mickjohn_user_id = game.usernames_map['mickjohn'].user_id
+
+    expected_client = Client(mickjohn_user_id, game_id, mws)
+    assert handler.clients[mickjohn_user_id] == expected_client
+    assert handler.websockets[mws] == expected_client
+
     expected_message = {
         'type': 'PlayerAdded',
-        'id': mickjohn_user_id,
+        'player': game.usernames_map['mickjohn']
     }
-    assert handler.players_id[mickjohn_user_id] == (mws, game_id)
-    assert handler.players_websocket[mws] == (mickjohn_user_id, game_id)
-    assert mws.message_stack[0] == json.dumps(expected_message)
+
+    print(f"stack = {mws.message_stack}")
+    assert mws.message_stack[0] == jsonpickle.encode(
+        expected_message, unpicklable=False)
 
 
 @pytest.mark.asyncio
@@ -102,7 +157,8 @@ async def test_red_or_black_handler_error_when_user_already_added_to_game():
         'type': 'Error',
         'error': "User with name mickjohn already exists in game",
     }
-    assert mws.message_stack[1] == json.dumps(expected_message)
+    assert mws.message_stack[1] == jsonpickle.encode(
+        expected_message, unpicklable=True)
 
 
 @pytest.mark.asyncio
@@ -124,6 +180,20 @@ async def test_handle_close():
     await handler.handle_message(message, mws)
     expected_message = {
         'type': 'Error',
-        'error': "User with name mickjohn already exists in game",
+        'error': 'User with name mickjohn already exists in game',
     }
-    assert mws.message_stack[1] == json.dumps(expected_message)
+
+    assert mws.message_stack[1] == jsonpickle.encode(
+        expected_message, unpicklable=False)
+
+    expected_broadcast_message = {
+        "broadcast": True,
+        "type": "PlayerAdded",
+        "player": {
+            "active": True,
+            "username": "mickjohn"
+        },
+    }
+
+    # Broadcast should skip origin websocket
+    assert len(mws.broadcast_stack) == 0
