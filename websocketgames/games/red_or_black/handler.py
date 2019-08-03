@@ -12,6 +12,7 @@ MESSAGE_TYPES = [
     'AddPlayer',
     'CreateGame',
     'ReaddPlayer',
+    'GameStatus',
 ]
 
 SENDABLE_MESSAGES = [
