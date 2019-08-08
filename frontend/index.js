@@ -2,9 +2,8 @@ MODULUS = 97
 BASE = 26
 DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-MODULUS_TABLE = {
-    0: 'redorblack'
-}
+MODULUS_TABLE = new Map();
+MODULUS_TABLE.set(0, 'redorblack');
 
 function DecodeGameCode(game_code) {
 
@@ -24,17 +23,20 @@ function DecodeGameCode(game_code) {
     return decoded_number;
 }
 
-function JoinGame(e) {
-    let code = 0;
+function JoinGame() {
+    let code = $('#room-code').val();
+    console.info(`Code = ${code}`);
     let decoded_code = DecodeGameCode(code);
+    console.info(`Decoded code = ${decoded_code}`);
 
     if (decoded_code === null) {
         console.error('Could not decode game code');
         return null;
     }
 
-    let mod = code % MODULUS;
-    let game = MODULUS_TABLE[mod];
+    let mod = decoded_code % MODULUS;
+    console.debug(`Modulus = ${mod}`);
+    let game = MODULUS_TABLE.get(mod);
     console.info(`Joining ${game}`);
     let url = BuildUrl(game, code);
     window.location.href = url;
@@ -47,3 +49,14 @@ function BuildUrl(gamePath, gameCode) {
     let url = `${protocol}//${host}/${gamePath}?gameCode=${gameCode}`;
     return url;
 }
+
+function init() {
+    $('#join').click(function(e) {
+        e.preventDefault();
+        JoinGame();
+    });
+}
+
+$(document).ready(function(){
+    init();
+})
