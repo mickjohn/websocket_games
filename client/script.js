@@ -98,9 +98,7 @@ window.addEventListener("load", init, false);
 
 function _create_game_data() {
     var data = {
-        "game_id": "",
         "type": "CreateGame",
-        "data": {}
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }
@@ -111,9 +109,7 @@ function _add_user_data() {
     var data = {
         "game_id": `${game_id}`,
         "type": "AddPlayer",
-        "data": {
-            "username": `${username}`
-        }
+        "username": `${username}`
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }

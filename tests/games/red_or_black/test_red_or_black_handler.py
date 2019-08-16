@@ -1,5 +1,5 @@
 from websocketgames.games.red_or_black import handler
-from websocketgames.games.red_or_black.handler import RedOrBlack, Message, Client
+from websocketgames.games.red_or_black.handler import RedOrBlack, Client
 from websocketgames import code_generator
 import pytest
 from pytest_asyncio.plugin import asyncio
@@ -72,9 +72,7 @@ async def test_red_or_black_handler_can_create_game():
     mws = MockWebsocket()
     handler = RedOrBlack()
     message = {
-        'game_id': '',
-        'type': 'CreateGame',
-        'data': {}
+        'type': 'CreateGame'
     }
     await handler.handle_message(message, mws)
     assert len(handler.games) == 1
@@ -94,7 +92,7 @@ async def test_red_or_black_handler_error_if_game_does_not_exist():
     message = {
         'game_id': 'does not exist',
         'type': 'AddPlayer',
-        'data': {}
+        'username': 'mickjohn'
     }
     await handler.handle_message(message, mws)
     expected_message = {
@@ -115,9 +113,7 @@ async def test_red_or_black_handler_can_add_player_to_game():
     message = {
         'game_id': game_id,
         'type': 'AddPlayer',
-        'data': {
-            'username': 'mickjohn'
-        }
+        'username': 'mickjohn'
     }
     await handler.handle_message(message, mws)
     mickjohn_user_id = game.usernames_map['mickjohn'].user_id
@@ -145,9 +141,7 @@ async def test_red_or_black_handler_error_when_user_already_added_to_game():
     message = {
         'game_id': game_id,
         'type': 'AddPlayer',
-        'data': {
-            'username': 'mickjohn'
-        }
+        'username': 'mickjohn'
     }
     # Add user once
     await handler.handle_message(message, mws)
@@ -170,9 +164,7 @@ async def test_handle_close():
     message = {
         'game_id': game_id,
         'type': 'AddPlayer',
-        'data': {
-            'username': 'mickjohn'
-        }
+        'username': 'mickjohn'
     }
     # Add user once
     await handler.handle_message(message, mws)

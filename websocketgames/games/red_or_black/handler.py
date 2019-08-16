@@ -1,5 +1,7 @@
 from websocketgames import code_generator
 from websocketgames.games.red_or_black.game import RedOrBlackGame, UserAlreadyExists
+from websocketgames.games.red_or_black import validator
+
 from collections import defaultdict
 import logging
 from threading import Thread, Lock
@@ -13,6 +15,7 @@ MESSAGE_TYPES = [
     'CreateGame',
     'ReaddPlayer',
     'GameStatus',
+    'ValidateId',
 ]
 
 SENDABLE_MESSAGES = [
@@ -71,33 +74,6 @@ class Client():
         if isinstance(other, Client):
             return self.__dict__ == other.__dict__
         return False
-
-
-class Message():
-    '''
-    A class that represents a incoming message that is sent from a client. It
-    is initialised by passing a json dict that is created by deserialising the
-    incoming data from the client. The json dict is then validated and if it's
-    OK then the message is initialised, containing the game_id and data
-    '''
-
-    def __init__(self, json_dict):
-        if 'game_id' not in json_dict:
-            raise Exception("Field 'game_id' is missing")
-        if 'data' not in json_dict:
-            raise Exception("Field 'data' is missing")
-        if 'type' not in json_dict:
-            raise Exception("Field 'type' is missing")
-
-        if not isinstance(json_dict['data'], dict):
-            raise Exception('data should be an object')
-
-        if json_dict['type'] not in MESSAGE_TYPES:
-            raise Exception(f"Unknown message type '{json_dict['type']}''")
-
-        self.game_id = json_dict['game_id']
-        self.data = json_dict['data']
-        self.type = json_dict['type']
 
 
 async def send_message(websocket, msg_type, **kwargs):
@@ -191,24 +167,25 @@ class RedOrBlack():
 
     async def handle_message(self, json_dict, websocket):
         logger.debug("RedOrBlack handler handling message")
-        message = Message(json_dict)
-        game_id = message.game_id
+        validator.validate_msg(json_dict)
+        message = json_dict
 
-        if message.type == 'CreateGame':
+        if message['type'] == 'CreateGame':
             game_code = self._create_game()
             await send_message(websocket, 'GameCreated', game_code=game_code)
             return
 
-        if game_id not in self.games:
-            logger.error(f"Game with code '{game_id}' does not exist")
-            error_msg = {
-                'error': f"no RedOrBlack game with code {game_id} exists"
-            }
-            await send_message(websocket, 'Error', **error_msg)
-            return
+        game_id = message['game_id']
+        if message['type'] == 'AddPlayer':
+            if game_id not in self.games:
+                logger.error(f"Game with code '{game_id}' does not exist")
+                error_msg = {
+                    'error': f"no RedOrBlack game with code {game_id} exists"
+                }
+                await send_message(websocket, 'Error', **error_msg)
+                return
 
-        if message.type == 'AddPlayer':
-            username = message.data['username']
+            username = message['username']
             try:
                 player = self._add_player(username, game_id, websocket)
                 broadcast_sockets = self._get_websockets_for_game(game_id)
@@ -217,6 +194,13 @@ class RedOrBlack():
             except UserAlreadyExists:
                 await send_message(websocket,
                                    'Error', error=f"User with name {username} already exists in game")
+            return
+
+        if message['user_id'] not in self.clients:
+            logger.error("User ID {message['user_id']} not found")
+            return
+
+        # player = self.clients[message.user_id]
 
     def _create_game(self):
         game_code = code_generator.generate_code(self.name)
