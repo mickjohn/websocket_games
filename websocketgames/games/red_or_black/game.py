@@ -43,8 +43,18 @@ class RedOrBlackGame():
 
     def __init__(self, game_code):
         self.game_code = game_code
+        # Map of username -> Player
+        self.registered_players = {}
+
+        # Map of id -> Player
+        self.registered_ids = {}
+
+        # Map of username -> Player
         self.usernames_map = {}
+
+        # Map of user id -> Player
         self.id_map = {}
+
         self.turn = 0
         self.state = GameStates.LOBBY
         self.owner = None
@@ -63,8 +73,14 @@ class RedOrBlackGame():
     def is_finished(self):
         return self.state == GameStates.FINISHED
 
-    def add_player(self, username):
-        if username in self.usernames_map:
+    def add_player_by_username(self, username):
+        '''
+        Add a player into the game by username. If the username is taken an
+        exception is thrown. A UUID is created and a Player object is returned.
+        The player is added to the internal structures of the game.
+        This is the same as registering a player and activating the player.
+        '''
+        if username in self.usernames_map or username in self.registered_players:
             logger.error(f"User {username} already exists in {self.game_code}")
             raise UserAlreadyExists(
                 f"User {username} already exists in {self.game_code}")
@@ -78,6 +94,39 @@ class RedOrBlackGame():
         if self.owner is None:
             self.owner = player
         return user_id
+
+    def activate_player(self, user_id):
+        '''
+        Activate a registered player
+        '''
+        if user_id not in self.registered_ids:
+            err_msg = f"ID {user_id} not found in registered users"
+            logger.error(err_msg)
+            raise(UserDoesNotExist(err_msg))
+        player = self.registered_ids[user_id]
+        logger.info(
+            f"Adding player {player.username} to game {self.game_code}")
+        self.usernames_map[player.username] = player
+        self.id_map[user_id] = player
+        self.order.append(player)
+        if self.owner is None:
+            self.owner = player
+
+    def register_player(self, username):
+        '''
+        Create a player, but don't add to the game. 'activate_player' must be
+        called afterwards to enable the player.
+        '''
+        if username in self.registered_players or username in self.usernames_map:
+            err_msg = f"User {username} already registered in {self.game_code}"
+            logger.error(err_msg)
+            raise UserAlreadyExists(err_msg)
+        user_id = str(uuid.uuid4())
+        logger.info(f"Registering player {username} in game {self.game_code}")
+        player = Player(username, user_id)
+        self.registered_players[username] = player
+        self.registered_ids[user_id] = player
+        return player
 
     def start_game(self, user_id):
         if user_id not in self.id_map:

@@ -6,7 +6,7 @@ import pytest
 
 def test_add_user():
     game = RedOrBlackGame('AAAA')
-    uid = game.add_player('mickjohn')
+    uid = game.add_player_by_username('mickjohn')
     assert uid
     assert len(game.usernames_map) == 1
     assert len(game.id_map) == 1
@@ -17,16 +17,16 @@ def test_add_user():
 
 def test_add_user_cant_have_duplicate_usernames():
     game = RedOrBlackGame('AAAA')
-    game.add_player('mickjohn')
+    game.add_player_by_username('mickjohn')
     with pytest.raises(red_or_black_game.UserAlreadyExists) as e:
-        game.add_player('mickjohn')
+        game.add_player_by_username('mickjohn')
     assert "User mickjohn already exists in AAAA" in str(e.value)
 
 
 def test_start_game():
     game = RedOrBlackGame('AAAA')
-    owner_id = game.add_player('mickjohn')
-    game.add_player('qwert')
+    owner_id = game.add_player_by_username('mickjohn')
+    game.add_player_by_username('qwert')
     game.start_game(owner_id)
     assert game.is_playing()
 
@@ -40,8 +40,8 @@ def test_start_game_raises_error_if_user_doesnt_exist():
 
 def test_start_game_only_owner_can_start():
     game = RedOrBlackGame('AAAA')
-    __owner_id = game.add_player('mickjohn')
-    other_id = game.add_player('qwert')
+    __owner_id = game.add_player_by_username('mickjohn')
+    other_id = game.add_player_by_username('qwert')
     with pytest.raises(red_or_black_game.UserNotAllowedToStart) as e:
         game.start_game(other_id)
     assert "User qwert is not allowed to start the game" == str(e.value)
@@ -49,16 +49,16 @@ def test_start_game_only_owner_can_start():
 
 def test_can_play_turn():
     game = RedOrBlackGame('AAAA')
-    player1 = game.add_player('mickjohn')
-    game.add_player('player2')
+    player1 = game.add_player_by_username('mickjohn')
+    game.add_player_by_username('player2')
     game.start_game(player1)
     assert game.can_play_turn(player1)
 
 
 def test_can_play_turn_fails_when_not_players_turn():
     game = RedOrBlackGame('AAAA')
-    player1 = game.add_player('mickjohn')
-    player2 = game.add_player('player2')
+    player1 = game.add_player_by_username('mickjohn')
+    player2 = game.add_player_by_username('player2')
     game.start_game(player1)
     assert game.can_play_turn(player1)
     with pytest.raises(red_or_black_game.NotPlayersTurn) as e:
@@ -68,7 +68,7 @@ def test_can_play_turn_fails_when_not_players_turn():
 
 def test_can_play_turn_fails_game_is_not_in_progress():
     game = RedOrBlackGame('AAAA')
-    game.add_player('mickjohn')
+    game.add_player_by_username('mickjohn')
     with pytest.raises(red_or_black_game.WrongStateException) as e:
         game.can_play_turn('')
     assert "Game is not in playing state" == str(e.value)
@@ -76,8 +76,8 @@ def test_can_play_turn_fails_game_is_not_in_progress():
 
 def test_play_turn():
     game = RedOrBlackGame('AAAA')
-    player1 = game.add_player('mickjohn')
-    player2 = game.add_player('player2')
+    player1 = game.add_player_by_username('mickjohn')
+    player2 = game.add_player_by_username('player2')
     game.start_game(player1)
     assert isinstance(game.play_turn(player1, 'Black'), bool)
     assert isinstance(game.play_turn(player2, 'Red'), bool)
@@ -91,7 +91,7 @@ def test_play_turn():
 
 def test_play_turn_game_ends_when_deck_is_exhausted():
     game = RedOrBlackGame('AAAA')
-    player1 = game.add_player('mickjohn')
+    player1 = game.add_player_by_username('mickjohn')
     game.start_game(player1)
     del(game.deck.cards[1:])
     game.play_turn(player1, 'Black')
@@ -106,7 +106,7 @@ def test_end_game():
 
 def test_restart_game():
     game = RedOrBlackGame('AAAA')
-    player1 = game.add_player('mickjohn')
+    player1 = game.add_player_by_username('mickjohn')
     game.start_game(player1)
     del(game.deck.cards[1:])
     game.play_turn(player1, 'Black')
@@ -153,7 +153,7 @@ def test_present_stats():
     }
     game = RedOrBlackGame('AAAA')
     game.stats = stats
-    [game.add_player(n) for n in ['mickjohn', 'michael', 'john']]
+    [game.add_player_by_username(n) for n in ['mickjohn', 'michael', 'john']]
     pretty_stats = game.present_stats()
     assert pretty_stats['wrong_guesses'] == 2
     assert pretty_stats['right_guesses'] == 2
@@ -168,7 +168,7 @@ def test_get_ranks():
     game = RedOrBlackGame('AAAA')
     players = ['mick', 'jane', 'dave', 'peter', 'noscore', 'noscore2']
     for p in players:
-        game.add_player(p)
+        game.add_player_by_username(p)
 
     correct_guesses = ['mick', 'jane', 'mick',
                        'jane', 'dave', 'dave', 'mick', 'peter']
@@ -184,7 +184,7 @@ def test_get_ranks():
 
 def test_can_make_player_inactive():
     game = RedOrBlackGame('AAAA')
-    uid = game.add_player('mickjohn')
+    uid = game.add_player_by_username('mickjohn')
     p = game.id_map[uid]
     assert p.active
     resp = game.make_player_inactive(uid)
@@ -197,8 +197,8 @@ def test_can_make_player_inactive():
 
 def test_player_order_changes_if_current_player_becomes_inactive():
     game = RedOrBlackGame('AAAA')
-    p1_uid = game.add_player('mickjohn')
-    p2_uid = game.add_player('player2')
+    p1_uid = game.add_player_by_username('mickjohn')
+    p2_uid = game.add_player_by_username('player2')
     p1 = game.id_map[p1_uid]
     p2 = game.id_map[p2_uid]
     game.start_game(p1_uid)
@@ -213,7 +213,7 @@ def test_player_order_changes_if_current_player_becomes_inactive():
 
 def test_game_ends_if_last_player_becomes_inactive():
     game = RedOrBlackGame('AAAA')
-    uid = game.add_player('mickjohn')
+    uid = game.add_player_by_username('mickjohn')
     resp = game.make_player_inactive(uid)
     player = game.id_map[uid]
     assert resp == [
@@ -224,8 +224,8 @@ def test_game_ends_if_last_player_becomes_inactive():
 
 def test_can_remove_player():
     game = RedOrBlackGame('AAAA')
-    uid1 = game.add_player('mickjohn')
-    uid2 = game.add_player('qwerty')
+    uid1 = game.add_player_by_username('mickjohn')
+    uid2 = game.add_player_by_username('qwerty')
     assert len(game.id_map) == 2
     assert len(game.usernames_map) == 2
     assert len(game.order) == 2
@@ -237,7 +237,7 @@ def test_can_remove_player():
 
 def test_removing_last_player_ends_game():
     game = RedOrBlackGame('AAAA')
-    uid = game.add_player('mickjohn')
+    uid = game.add_player_by_username('mickjohn')
     p = game.id_map[uid]
     game.start_game(uid)
     assert game.is_playing()
@@ -248,8 +248,8 @@ def test_removing_last_player_ends_game():
 
 def test_can_reactivate_player():
     game = RedOrBlackGame('AAAA')
-    p1_uid = game.add_player('mickjohn')
-    game.add_player('qwerty')
+    p1_uid = game.add_player_by_username('mickjohn')
+    game.add_player_by_username('qwerty')
     p1 = game.id_map[p1_uid]
     game.start_game(p1_uid)
     game.make_player_inactive(p1_uid)
@@ -259,3 +259,27 @@ def test_can_reactivate_player():
     assert resp == [{'type': 'PlayerRejoined', 'player': p1}]
     assert len(game.id_map) == 2
     assert len(game.order) == 2
+
+
+def test_register_player_works():
+    assert 0
+
+
+def test_register_player_fails_if_username_taken():
+    assert 0
+
+
+def test_activate_player_works():
+    assert 0
+
+
+def test_activate_player_fails_if_id_doesnt_exist():
+    assert 0
+
+
+def test_activate_player_is_idempotent():
+    assert 0
+
+
+def test_register_and_activate_is_same_as_adding_player():
+    assert 0

@@ -50,6 +50,7 @@ function init() {
     // Helper Buttons
     $('#create_game_button').click(function () { _create_game_data(); });
     $('#add_player_button').click(function () { _add_user_data(); });
+    $('#validate_id_button').click(function () { _add_validate_id_data(); });
 
 
 }
@@ -110,6 +111,15 @@ function _add_user_data() {
         "game_id": `${game_id}`,
         "type": "AddPlayer",
         "username": `${username}`
+    };
+    messageToSend.val(JSON.stringify(data, null, 2));
+}
+
+function _add_validate_id_data() {
+    user_id = $('#validate_id_user_id').val();
+    var data = {
+        "type": "ValidateId",
+        "user_id": `${user_id}`,
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }

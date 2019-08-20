@@ -34,6 +34,16 @@ schemas = {
             "username": {"type": "string"},
         }
     },
+
+    'ValidateId': {
+        "type": "object",
+        "required": ["type", "user_id"],
+        "additionalProperties": False,
+        "properties": {
+            "type": {"type": "string"},
+            "user_id": {"type": "string"},
+        }
+    },
 }
 
 

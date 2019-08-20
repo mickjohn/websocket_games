@@ -24,6 +24,8 @@ SENDABLE_MESSAGES = [
     'YouJoined',
     'GameCreated',
     'Debug',
+    'ValidatedId',
+    'InvalidId',
 ]
 
 INTERNAL_MESSAGES = [
@@ -34,7 +36,7 @@ INTERNAL_MESSAGES = [
     'PlayerDisconnected',
 ]
 
-SENDABLE_MESSAGES = SENDABLE_MESSAGES + INTERNAL_MESSAGES
+SENDABLE_MESSAGES.extend(INTERNAL_MESSAGES)
 
 MAX_INACTIVE_TIME = 10
 THREAD_PAUSE_TIME = 5
@@ -78,8 +80,8 @@ class Client():
 
 async def send_message(websocket, msg_type, **kwargs):
     if msg_type not in SENDABLE_MESSAGES:
-        raise Exception(f"Message type '{msg_type}' is unkown."
-                        "Known message types are {SENDABLE_MESSAGES}")
+        raise Exception(f"Message type '{msg_type}' is unkown. "
+                        f"Known message types are {SENDABLE_MESSAGES}")
     msg = {
         'type': msg_type,
         **kwargs
@@ -175,8 +177,8 @@ class RedOrBlack():
             await send_message(websocket, 'GameCreated', game_code=game_code)
             return
 
-        game_id = message['game_id']
         if message['type'] == 'AddPlayer':
+            game_id = message['game_id']
             if game_id not in self.games:
                 logger.error(f"Game with code '{game_id}' does not exist")
                 error_msg = {
@@ -196,11 +198,18 @@ class RedOrBlack():
                                    'Error', error=f"User with name {username} already exists in game")
             return
 
-        if message['user_id'] not in self.clients:
-            logger.error("User ID {message['user_id']} not found")
+        if message['type'] == 'ValidateId':
+            user_id = message['user_id']
+            logger.debug(f'Validating user_id "{user_id}"')
+            if user_id in self.clients:
+                client = self.clients[user_id]
+                game = self.games[client.game_id]
+                username = game.id_map[user_id].username
+                await send_message(websocket, 'ValidatedId',
+                                   game_id=client.game_id, username=username)
+            else:
+                await send_message(websocket, 'InvalidId', error=f"Id {user_id} not found.")
             return
-
-        # player = self.clients[message.user_id]
 
     def _create_game(self):
         game_code = code_generator.generate_code(self.name)
@@ -211,13 +220,16 @@ class RedOrBlack():
     def _add_player(self, username, game_id, websocket):
         game = self.games[game_id]
         self.mutex.acquire()
-        user_id = game.add_player(username)
+        user_id = game.add_player_by_username(username)
         player = game.id_map[user_id]
         client = Client(user_id, game_id, websocket)
         self.websockets[websocket] = client
         self.clients[user_id] = client
         self.mutex.release()
         return player
+
+    def _register_player(self, username, game_id, websocket):
+        pass
 
     '''
     Should be run in a thread
