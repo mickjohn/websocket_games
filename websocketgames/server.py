@@ -53,5 +53,5 @@ class WebsocketServer():
 
         finally:
             await self.game_handlers[game_type].handle_close(websocket)
-            await websocket.close()
+            # await websocket.close()
             logger.debug('Closing websocket connection')

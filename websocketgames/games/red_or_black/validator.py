@@ -8,7 +8,9 @@ ALLOWED_MESSAGES = [
     'CreateGame',
     'ReaddPlayer',
     'GameStatus',
-    'ValidateId',
+    'Register',
+    'Activate',
+    'StartGame',
 ]
 
 '''
@@ -35,15 +37,38 @@ schemas = {
         }
     },
 
-    'ValidateId': {
+    'Register': {
         "type": "object",
-        "required": ["type", "user_id"],
+        "required": ["type", "username", "game_id"],
+        "additionalProperties": False,
+        "properties": {
+            "type": {"type": "string"},
+            "username": {"type": "string"},
+            "game_id": {"type": "string"},
+        }
+    },
+
+    'Activate': {
+        "type": "object",
+        "required": ["type", "user_id", "game_id"],
         "additionalProperties": False,
         "properties": {
             "type": {"type": "string"},
             "user_id": {"type": "string"},
+            "game_id": {"type": "string"},
         }
     },
+
+    'StartGame': {
+        "type": "object",
+        "required": ["type", "user_id", "game_id"],
+        "additionalProperties": False,
+        "properties": {
+            "type": {"type": "string"},
+            "user_id": {"type": "string"},
+            "game_id": {"type": "string"},
+        }
+    },    
 }
 
 

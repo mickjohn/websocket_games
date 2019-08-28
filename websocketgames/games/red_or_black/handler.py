@@ -1,5 +1,5 @@
 from websocketgames import code_generator
-from websocketgames.games.red_or_black.game import RedOrBlackGame, UserAlreadyExists
+from websocketgames.games.red_or_black.game import RedOrBlackGame, UserAlreadyExists, UserDoesNotExist, UserNotAllowedToStart
 from websocketgames.games.red_or_black import validator
 
 from collections import defaultdict
@@ -26,6 +26,8 @@ SENDABLE_MESSAGES = [
     'Debug',
     'ValidatedId',
     'InvalidId',
+    'Registered',
+    'GameStarted',
 ]
 
 INTERNAL_MESSAGES = [
@@ -139,11 +141,17 @@ class RedOrBlack():
                 target=self._player_cleanup_thread, args=())
             cleanup_thread.start()
 
+    async def _send_game_not_found_error(self, game_id, websocket):
+        logger.error(f"Game with code '{game_id}' does not exist")
+        error_msg = {
+            'error': f"no RedOrBlack game with code {game_id} exists"
+        }
+        await send_message(websocket, 'Error', **error_msg)
+
     def _get_websockets_for_game(self, game_id):
         websockets = []
         for client in list(self.clients.values()):
             if client.game_id == game_id:
-                logger.debug(f'adding websocket to websockets')
                 websockets.append(client.websocket)
         logger.debug(f'brdcst skts = {websockets}')
         return websockets
@@ -166,9 +174,16 @@ class RedOrBlack():
                     msg['type'],
                     **msg,
                 )
+        websocket.close()
 
     async def handle_message(self, json_dict, websocket):
         logger.debug("RedOrBlack handler handling message")
+
+        if json_dict['type'] == 'Debug':
+            logger.debug(f"games = {self.games}")
+            logger.debug(f"clients =  {self.clients}")
+            logger.debug(f"websockets =  {self.websockets}")
+            return
         validator.validate_msg(json_dict)
         message = json_dict
 
@@ -180,11 +195,7 @@ class RedOrBlack():
         if message['type'] == 'AddPlayer':
             game_id = message['game_id']
             if game_id not in self.games:
-                logger.error(f"Game with code '{game_id}' does not exist")
-                error_msg = {
-                    'error': f"no RedOrBlack game with code {game_id} exists"
-                }
-                await send_message(websocket, 'Error', **error_msg)
+                await self._send_game_not_found_error(game_id, websocket)
                 return
 
             username = message['username']
@@ -198,17 +209,34 @@ class RedOrBlack():
                                    'Error', error=f"User with name {username} already exists in game")
             return
 
-        if message['type'] == 'ValidateId':
+        if message['type'] == 'Register':
+            game_id = message['game_id']
+            if game_id not in self.games:
+                await self._send_game_not_found_error(game_id, websocket)
+                return
+            username = message['username']
+            logger.debug(f'Registering user {username}')
+            await self._register_player(username, game_id, websocket)
+            return
+
+        if message['type'] == 'Activate':
+            game_id = message['game_id']
             user_id = message['user_id']
-            logger.debug(f'Validating user_id "{user_id}"')
-            if user_id in self.clients:
-                client = self.clients[user_id]
-                game = self.games[client.game_id]
-                username = game.id_map[user_id].username
-                await send_message(websocket, 'ValidatedId',
-                                   game_id=client.game_id, username=username)
-            else:
-                await send_message(websocket, 'InvalidId', error=f"Id {user_id} not found.")
+            if game_id not in self.games:
+                await self._send_game_not_found_error(game_id, websocket)
+                return
+            logger.debug(f'Activating user {user_id}')
+            await self._activate_player(user_id, game_id, websocket)
+            return
+
+        if message['type'] == 'StartGame':
+            game_id = message['game_id']
+            user_id = message['user_id']
+            if game_id not in self.games:
+                await self._send_game_not_found_error(game_id, websocket)
+                return
+            logger.debug(f'Starting game user {game_id}')
+            await self._start_game(user_id, game_id, websocket)
             return
 
     def _create_game(self):
@@ -228,14 +256,57 @@ class RedOrBlack():
         self.mutex.release()
         return player
 
-    def _register_player(self, username, game_id, websocket):
-        pass
+    # TODO needs tests
+    async def _activate_player(self, user_id, game_id, websocket):
+        '''
+        Activate a registered Player
+        '''
+        game = self.games[game_id]
+        try:
+            self.mutex.acquire()
+            game.activate_player(user_id)
+            player = game.registered_ids[user_id]
+            client = Client(user_id, game_id, websocket)
+            self.websockets[websocket] = client
+            self.clients[user_id] = client
 
-    '''
-    Should be run in a thread
-    '''
+            if user_id in self.inactive_player_ids:
+                self.inactive_player_ids.remove(user_id)
+
+            self.mutex.release()
+            broadcast_sockets = self._get_websockets_for_game(game_id)
+            await broadcast_message(broadcast_sockets, 'PlayerAdded', player=player, skip=[websocket])
+            await send_message(websocket, 'YouJoined', player=player, game_state=game.get_full_game_state())
+        except UserDoesNotExist:
+            await send_message(websocket,
+                               'Error', error=f"User with id {user_id} does not exist in game {game_id}")
+
+    # TODO needs tests
+    async def _register_player(self, username, game_id, websocket):
+        game = self.games[game_id]
+        try:
+            player = game.register_player(username)
+            await send_message(websocket, 'Registered', user_id=player.user_id)
+        except UserAlreadyExists:
+            await send_message(websocket,
+                               'Error', error=f"User with name {username} already registered in game")
+
+    # TODO needs tests
+    async def _start_game(self, user_id, game_id, websocket):
+        game: RedOrBlackGame = self.games[game_id]
+        try:
+            game.start_game(user_id)
+            broadcast_sockets = self._get_websockets_for_game(game_id)
+            await broadcast_message(broadcast_sockets, 'GameStarted')
+        except UserDoesNotExist as e:
+            send_message(websocket, 'Error', error=str(e))
+        except UserNotAllowedToStart as e:
+            send_message(websocket, 'Error', error=str(e))
 
     def _player_cleanup_thread(self):
+        '''
+        Should be run in a thread
+        '''
         logger.info("Starting up RedOrBlack handler cleanup thread")
         while True:
             self.mutex.acquire()

@@ -50,7 +50,9 @@ function init() {
     // Helper Buttons
     $('#create_game_button').click(function () { _create_game_data(); });
     $('#add_player_button').click(function () { _add_user_data(); });
-    $('#validate_id_button').click(function () { _add_validate_id_data(); });
+    $('#register_player_button').click(function () { _add_register_player_data(); });
+    $('#activate_id_button').click(function () { _add_activate_id_data(); });
+    $('#start_game_button').click(function () { _add_start_game_data(); });
 
 
 }
@@ -80,8 +82,8 @@ function onClose(evt) {
 
 function onMessage(evt) {
     writeMessage(evt.data);
+    updateFieldsHelper(evt.data);
     console.log(`message = ${evt.data}`)
-    // websocket.close();
 }
 
 function onError(evt) {
@@ -115,11 +117,35 @@ function _add_user_data() {
     messageToSend.val(JSON.stringify(data, null, 2));
 }
 
-function _add_validate_id_data() {
-    user_id = $('#validate_id_user_id').val();
+function _add_register_player_data() {
+    game_id = $('#register_player_game_id').val();
+    username = $('#register_player_username').val();
     var data = {
-        "type": "ValidateId",
+        "type": "Register",
+        "username": `${username}`,
+        "game_id": `${game_id}`,
+    };
+    messageToSend.val(JSON.stringify(data, null, 2));
+}
+
+function _add_activate_id_data() {
+    game_id = $('#activate_id_game_id').val();
+    user_id = $('#activate_id_user_id').val();
+    var data = {
+        "type": "Activate",
         "user_id": `${user_id}`,
+        "game_id": `${game_id}`,
+    };
+    messageToSend.val(JSON.stringify(data, null, 2));
+}
+
+function _add_start_game_data() {
+    game_id = $('#start_game_game_id').val();
+    user_id = $('#start_game_owner_id').val();
+    var data = {
+        "type": "StartGame",
+        "user_id": `${user_id}`,
+        "game_id": `${game_id}`,
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }
@@ -133,4 +159,20 @@ function _set_url_endpoint(endpoint) {
     }
     new_url = `${url.protocol}//${url.hostname}${port}/${endpoint}`
     $('#websocket_url').val(new_url)
+}
+
+
+function updateFieldsHelper(msg) {
+    let obj = JSON.parse(msg);
+    if (obj['type'] === 'GameCreated') {
+        let id = obj['game_code'];
+        $('#activate_id_game_id').val(id);
+        $('#register_player_game_id').val(id);
+        $('#start_game_game_id').val(id);
+        $('#add_player_game_id').val(id);
+    } else if (obj['type'] === 'Registered') {
+        let uid = obj['user_id'];
+        $('#activate_id_user_id').val(uid);
+        $('#start_game_owner_id').val(uid);
+    }
 }

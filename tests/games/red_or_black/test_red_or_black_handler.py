@@ -47,15 +47,6 @@ def test_remove_sensitive_info_from_message(set_sensitive_array):
         }
     }
 
-    # msg = {
-    #     'type': 'PlayerAdded',
-    #     'broadcast': True,
-    #     'player': {
-    #         'username': 'mickjohn',
-    #         'active': True
-    #     }
-    # }
-
     expected_msg = {
         'type': 'TestMessage',
         'nested': {

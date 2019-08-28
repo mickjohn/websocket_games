@@ -195,6 +195,12 @@ def test_can_make_player_inactive():
     ]
 
 
+def test_get_current_player():
+    game = RedOrBlackGame('AAAA')
+    uid = game.add_player_by_username('mickjohn')
+    game.remove_player(uid)
+    assert game._get_current_player() == None
+
 def test_player_order_changes_if_current_player_becomes_inactive():
     game = RedOrBlackGame('AAAA')
     p1_uid = game.add_player_by_username('mickjohn')
@@ -262,24 +268,100 @@ def test_can_reactivate_player():
 
 
 def test_register_player_works():
-    assert 0
+    game = RedOrBlackGame('AAAA')
+    game.register_player('mickjohn')
+    assert len(game.registered_players) == 1
+    assert len(game.registered_ids) == 1
+    assert len(game.usernames_map) == 0
+    assert len(game.id_map) == 0
+    assert len(game.order) == 0
 
 
 def test_register_player_fails_if_username_taken():
-    assert 0
+    game = RedOrBlackGame('AAAA')
+    game.register_player('mickjohn')
+    with pytest.raises(red_or_black_game.UserAlreadyExists):
+        game.register_player('mickjohn')
+
+    assert len(game.registered_players) == 1
+    assert len(game.registered_ids) == 1
+    assert len(game.usernames_map) == 0
+    assert len(game.id_map) == 0
+    assert len(game.order) == 0
 
 
 def test_activate_player_works():
-    assert 0
+    game = RedOrBlackGame('AAAA')
+    p = game.register_player('mickjohn')
+    game.activate_player(p.user_id)
+    assert len(game.registered_players) == 1
+    assert len(game.registered_ids) == 1
+    assert len(game.usernames_map) == 1
+    assert len(game.id_map) == 1
+    assert len(game.order) == 1
 
 
 def test_activate_player_fails_if_id_doesnt_exist():
-    assert 0
+    game = RedOrBlackGame('AAAA')
+    with pytest.raises(red_or_black_game.UserDoesNotExist):
+        game.activate_player('abc')
+    assert len(game.registered_players) == 0
+    assert len(game.registered_ids) == 0
+    assert len(game.usernames_map) == 0
+    assert len(game.id_map) == 0
+    assert len(game.order) == 0
 
 
 def test_activate_player_is_idempotent():
-    assert 0
+    game = RedOrBlackGame('AAAA')
+    p = game.register_player('mickjohn')
+    game.activate_player(p.user_id)
+    game.activate_player(p.user_id)
+    assert len(game.registered_players) == 1
+    assert len(game.registered_ids) == 1
+    assert len(game.usernames_map) == 1
+    assert len(game.id_map) == 1
+    assert len(game.order) == 1
 
 
-def test_register_and_activate_is_same_as_adding_player():
-    assert 0
+def test_get_full_game_state():
+    game = RedOrBlackGame('AAAA')
+    p1 = game.add_player_by_username('player1')
+    p2 = game.add_player_by_username('player2')
+    p3 = game.add_player_by_username('player3')
+    game.start_game(p1)
+    game.play_turn(p1, 'Black')
+    game.play_turn(p2, 'Black')
+    game.play_turn(p3, 'Black')
+    game.play_turn(p1, 'Black')
+
+    players = list(game.id_map.values())
+    assert len(players) == 3
+    order = [
+        game.id_map[p1],
+        game.id_map[p2],
+        game.id_map[p3],
+    ]
+
+    expected_state = {
+        'players': players,
+        'turn': 4,
+        'state': 'PLAYING',
+        'owner': game.id_map[p1],
+        'order': order,
+    }
+    assert game.get_full_game_state() == expected_state
+
+# def test_play_turn():
+#     game = RedOrBlackGame('AAAA')
+#     player1 = game.add_player_by_username('mickjohn')
+#     player2 = game.add_player_by_username('player2')
+#     game.start_game(player1)
+#     assert isinstance(game.play_turn(player1, 'Black'), bool)
+#     assert isinstance(game.play_turn(player2, 'Red'), bool)
+#     assert isinstance(game.play_turn(player1, 'Red'), bool)
+#     assert isinstance(game.play_turn(player2, 'Black'), bool)
+#     print(game.stats['outcomes'])
+#     assert len(game.stats['outcomes']) == 4
+#     assert game.stats['outcomes'][1]['player'].username == 'mickjohn'
+#     assert game.stats['outcomes'][2]['player'].username == 'player2'

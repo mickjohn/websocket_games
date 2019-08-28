@@ -215,6 +215,7 @@ class RedOrBlackGame():
         index = self.turn % len(self.order)
         current_player = self.order[index]
         return current_player
+        
 
     def play_turn(self, user_id, guess):
         self.can_play_turn(user_id)
