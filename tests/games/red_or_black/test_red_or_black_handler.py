@@ -59,7 +59,7 @@ def test_remove_sensitive_info_from_message(set_sensitive_array):
 
 
 @pytest.mark.asyncio
-async def test_red_or_black_handler_can_create_game():
+async def test_can_create_game():
     mws = MockWebsocket()
     handler = RedOrBlack()
     message = {
@@ -77,7 +77,7 @@ async def test_red_or_black_handler_can_create_game():
 
 
 @pytest.mark.asyncio
-async def test_red_or_black_handler_error_if_game_does_not_exist():
+async def test_error_if_game_does_not_exist():
     mws = MockWebsocket()
     handler = RedOrBlack()
     message = {
@@ -95,7 +95,7 @@ async def test_red_or_black_handler_error_if_game_does_not_exist():
 
 
 @pytest.mark.asyncio
-async def test_red_or_black_handler_can_add_player_to_game():
+async def test_can_add_player_to_game():
     mws = MockWebsocket()
     handler = RedOrBlack()
     game_id = handler._create_game()
@@ -124,7 +124,7 @@ async def test_red_or_black_handler_can_add_player_to_game():
 
 
 @pytest.mark.asyncio
-async def test_red_or_black_handler_error_when_user_already_added_to_game():
+async def test_error_when_user_already_added_to_game():
     mws = MockWebsocket()
     handler = RedOrBlack()
     game_id = handler._create_game()
@@ -180,3 +180,200 @@ async def test_handle_close():
 
     # Broadcast should skip origin websocket
     assert len(mws.broadcast_stack) == 0
+
+
+@pytest.mark.asyncio
+async def test_register_player():
+    mws = MockWebsocket()
+    handler = RedOrBlack()
+    game_id = handler._create_game()
+
+    message = {
+        "type": "Register",
+        "username": "mickjohn",
+        "game_id": game_id,
+    }
+
+    await handler.handle_message(message, mws)
+    game = handler.games[game_id]
+    uid = list(game.registered_ids.keys())[0]
+    expected_msg = jsonpickle.encode({
+        "type": "Registered",
+        "user_id": uid,
+    }, unpicklable=True)
+    assert len(mws.message_stack) == 1
+    assert mws.message_stack[0] == expected_msg
+
+
+@pytest.mark.asyncio
+async def test_register_player_sends_error_if_player_already_registered():
+    mws = MockWebsocket()
+    handler = RedOrBlack()
+    game_id = handler._create_game()
+
+    message = {
+        "type": "Register",
+        "username": "mickjohn",
+        "game_id": game_id,
+    }
+
+    await handler.handle_message(message, mws)
+
+    # Send message again
+    await handler.handle_message(message, mws)
+    handler.games[game_id]
+    expected_msg = jsonpickle.encode({
+        "error": "User with name mickjohn already registered in game",
+        "type": "Error"
+    }, unpicklable=True)
+    assert len(mws.message_stack) == 2
+    assert mws.message_stack[1] == expected_msg
+
+
+@pytest.mark.asyncio
+async def test_activate_player():
+    mws = MockWebsocket()
+    handler = RedOrBlack()
+    game_id = handler._create_game()
+    game = handler.games[game_id]
+    uid = game.register_player('mickjohn').user_id
+
+    # Check that the inactive ID is removed
+    handler.inactive_player_ids.add(uid)
+    msg = {
+        'type': 'Activate', 'game_id': game_id, 'user_id': uid,
+    }
+
+    await handler.handle_message(msg, mws)
+    assert len(game.usernames_map) == 1
+    assert len(game.id_map) == 1
+    assert handler.clients[uid] == Client(uid, game_id, mws)
+    assert handler.websockets[mws] == Client(uid, game_id, mws)
+    assert len(handler.inactive_player_ids) == 0
+
+    expected_msg = jsonpickle.encode({
+        'type': 'YouJoined',
+        'player': game.id_map[uid],
+        'game_state': game.get_full_game_state(),
+    }, unpicklable=False)
+
+    assert len(mws.message_stack) == 1
+    assert mws.message_stack[0] == expected_msg
+    # The websocket should be skipped by the broadcast message
+    assert len(mws.broadcast_stack) == 0
+
+
+@pytest.mark.asyncio
+async def test_activate_player_fails_if_player_not_registered():
+    mws = MockWebsocket()
+    handler = RedOrBlack()
+    game_id = handler._create_game()
+
+    uid = 'sdjnbfsdbnlsnf'
+    msg = {
+        'type': 'Activate', 'game_id': game_id, 'user_id': uid,
+    }
+
+    await handler.handle_message(msg, mws)
+
+    expected_msg = jsonpickle.encode({
+        'type': 'Error',
+        'error': f"User with id sdjnbfsdbnlsnf does not exist in game {game_id}",
+    }, unpicklable=False)
+
+    assert len(mws.message_stack) == 1
+    assert mws.message_stack[0] == expected_msg
+
+
+@pytest.mark.asyncio
+async def test_activate_player_idempotent():
+    mws = MockWebsocket()
+    handler = RedOrBlack()
+    game_id = handler._create_game()
+    game = handler.games[game_id]
+    uid = game.register_player('mickjohn').user_id
+
+    # Check that the inactive ID is removed
+    handler.inactive_player_ids.add(uid)
+    msg = {
+        'type': 'Activate', 'game_id': game_id, 'user_id': uid,
+    }
+
+    await handler.handle_message(msg, mws)
+    state_before = (
+        game.usernames_map,
+        game.id_map,
+        handler.clients,
+        handler.websockets,
+        handler.inactive_player_ids,
+    )
+    assert len(mws.message_stack) == 1
+
+    # Activate user again
+    await handler.handle_message(msg, mws)
+    state_after = (
+        game.usernames_map,
+        game.id_map,
+        handler.clients,
+        handler.websockets,
+        handler.inactive_player_ids,
+    )
+
+    assert state_before == state_after
+    assert len(mws.message_stack) == 2
+
+
+@pytest.mark.asyncio
+async def test_start_game():
+    mws = MockWebsocket()
+    handler = RedOrBlack()
+    game_id = handler._create_game()
+    game = handler.games[game_id]
+    uid = game.register_player('mickjohn').user_id
+
+    await handler.handle_message({
+        'type': 'Activate', 'game_id': game_id, 'user_id': uid,
+    }, mws)
+
+    assert game.is_lobby()
+
+    msg = {
+        'type': 'StartGame', 'user_id': uid, 'game_id': game_id,
+    }
+
+    await handler.handle_message(msg, mws)
+    assert game.is_playing()
+    assert len(mws.broadcast_stack) == 1
+
+    expected_msg = jsonpickle.encode({
+        'broadcast': True,
+        'type': 'GameStarted'
+    }, unpicklable=False)
+
+    assert mws.broadcast_stack[0] == expected_msg
+
+
+@pytest.mark.asyncio
+async def test_start_game_fails_if_player_is_not_owner():
+    mws = MockWebsocket()
+    handler = RedOrBlack()
+    game_id = handler._create_game()
+    game = handler.games[game_id]
+    game.add_player_by_username('mickjohn')
+    uid = game.add_player_by_username('mickjohn2')
+
+    assert game.is_lobby()
+
+    msg = {
+        'type': 'StartGame', 'user_id': uid, 'game_id': game_id,
+    }
+
+    await handler.handle_message(msg, mws)
+    assert len(mws.message_stack) == 1
+
+    expected_msg = jsonpickle.encode({
+        'type': 'Error',
+        'error': f'User with id {uid} not allowed to start the game'
+    }, unpicklable=False)
+
+    assert mws.message_stack[0] == expected_msg

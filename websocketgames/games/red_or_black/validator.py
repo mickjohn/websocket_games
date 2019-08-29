@@ -68,7 +68,7 @@ schemas = {
             "user_id": {"type": "string"},
             "game_id": {"type": "string"},
         }
-    },    
+    },
 }
 
 
