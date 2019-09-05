@@ -16,9 +16,15 @@
             <input type="text" id="websocket_url" value="ws://127.0.0.1:8080"></input>
             <button id="websocket_connect" type="button">Connect</button>
             <button id="websocket_disconnect" type="button">Disconnect</button>
-        </form>
-        <h3> Send Message </h3>
 
+        </form>
+
+        <div>
+            <a href="#" id="open_react_link"> React </a>
+            <button id="send_debug_button">Send Debug Msg!</button>
+        </div>
+
+        <h3> Send Message </h3>
         <!-- Helper Buttons-->
         <fieldset>
             <legend>Create Game</legend>
@@ -37,13 +43,14 @@
             <input id="register_player_game_id" type="text" placeholder="game id"></input>
             <input id="register_player_username" type="text" placeholder="username"></input>
             <button id="register_player_button"> Register Player </button>
+
         </fieldset>
 
         <fieldset>
             <legend>Activate id</legend>
             <input id="activate_id_game_id" type="text" placeholder="game id"></input>
             <input id="activate_id_user_id" type="text" placeholder="user id"></input>
-            <button id="activate_id_button">Register Id</button>
+            <button id="activate_id_button">Activate Id</button>
         </fieldset>
 
         <fieldset>

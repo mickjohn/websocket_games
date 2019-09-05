@@ -20,7 +20,7 @@ def test_add_user_cant_have_duplicate_usernames():
     game.add_player_by_username('mickjohn')
     with pytest.raises(red_or_black_game.UserAlreadyExists) as e:
         game.add_player_by_username('mickjohn')
-    assert "User mickjohn already exists in AAAA" in str(e.value)
+    assert "User mickjohn already registered in AAAA" in str(e.value)
 
 
 def test_start_game():
@@ -191,7 +191,7 @@ def test_can_make_player_inactive():
     assert not p.active
     assert resp == [
         {'type': 'PlayerDisconnected', 'player': p},
-        {'type': 'GameStopped'}
+        # {'type': 'GameStopped'}
     ]
 
 
@@ -200,6 +200,7 @@ def test_get_current_player():
     uid = game.add_player_by_username('mickjohn')
     game.remove_player(uid)
     assert game._get_current_player() == None
+
 
 def test_player_order_changes_if_current_player_becomes_inactive():
     game = RedOrBlackGame('AAAA')
@@ -217,21 +218,10 @@ def test_player_order_changes_if_current_player_becomes_inactive():
     ]
 
 
-def test_game_ends_if_last_player_becomes_inactive():
-    game = RedOrBlackGame('AAAA')
-    uid = game.add_player_by_username('mickjohn')
-    resp = game.make_player_inactive(uid)
-    player = game.id_map[uid]
-    assert resp == [
-        {'type': 'PlayerDisconnected', 'player': player},
-        {'type': 'GameStopped'},
-    ]
-
-
 def test_can_remove_player():
     game = RedOrBlackGame('AAAA')
     uid1 = game.add_player_by_username('mickjohn')
-    uid2 = game.add_player_by_username('qwerty')
+    game.add_player_by_username('qwerty')
     assert len(game.id_map) == 2
     assert len(game.usernames_map) == 2
     assert len(game.order) == 2
@@ -249,7 +239,8 @@ def test_removing_last_player_ends_game():
     assert game.is_playing()
     resp = game.remove_player(uid)
     assert game.is_finished()
-    assert resp == [{'type': 'PlayerLeft', 'player': p}]
+    assert resp == [{'type': 'PlayerLeft',
+                     'player': p}, {'type': 'GameStopped'}]
 
 
 def test_can_reactivate_player():

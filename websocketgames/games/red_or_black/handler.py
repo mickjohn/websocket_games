@@ -28,6 +28,7 @@ SENDABLE_MESSAGES = [
     'InvalidId',
     'Registered',
     'GameStarted',
+    'NewOwner'
 ]
 
 INTERNAL_MESSAGES = [
@@ -313,6 +314,17 @@ class RedOrBlack():
                 'Error',
                 error=f"User with name {username} already registered in game"
             )
+
+    async def _play_turn(self, message, websocket):
+        user_id = message['user_id']
+        game_id = message['game_id']
+        guess = message['guess']
+        if game_id not in self.games:
+            self._send_game_not_found_error(game_id, websocket)
+            return
+
+        game = self.games[game_id]
+        
 
     def _player_cleanup_thread(self):
         '''

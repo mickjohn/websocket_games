@@ -90,6 +90,20 @@ class RedOrBlackGame():
             'outcomes': {}
         }
 
+    def __repr__(self):
+        return (
+            f"\n[{self.game_code}]: registered_players: {self.registered_players}\n"
+            f"[{self.game_code}]: registered_ids: {self.registered_ids}\n"
+            f"[{self.game_code}]: usernames_map: {self.usernames_map}\n"
+            f"[{self.game_code}]: id_map: {self.id_map}\n"
+            f"[{self.game_code}]: turn: {self.turn}\n"
+            f"[{self.game_code}]: state: {self.state}\n"
+            f"[{self.game_code}]: owner: {self.owner}\n"
+            f"[{self.game_code}]: order: {self.order}\n"
+            f"[{self.game_code}]: cards left: {len(self.deck.cards)}\n"
+            f"[{self.game_code}]: stats: {self.stats}\n"
+        )
+
     def is_lobby(self):
         return self.state == GameStates.LOBBY
 
@@ -116,20 +130,9 @@ class RedOrBlackGame():
         The player is added to the internal structures of the game.
         This is the same as registering a player and activating the player.
         '''
-        if username in self.usernames_map or username in self.registered_players:
-            logger.error(f"User {username} already exists in {self.game_code}")
-            raise UserAlreadyExists(
-                f"User {username} already exists in {self.game_code}")
-
-        user_id = str(uuid.uuid4())
-        logger.info(f"Adding player {username} to game {self.game_code}")
-        player = Player(username, user_id)
-        self.usernames_map[player.username] = player
-        self.id_map[user_id] = player
-        self.order.append(player)
-        if self.owner is None:
-            self.owner = player
-        return user_id
+        player = self.register_player(username)
+        self.activate_player(player.user_id)
+        return player.user_id
 
     def activate_player(self, user_id):
         '''
@@ -141,6 +144,11 @@ class RedOrBlackGame():
             raise(UserDoesNotExist(err_msg))
 
         if user_id in self.id_map:
+            p = self.id_map[user_id]
+
+            # Reactivate player if they have left and are rejoining
+            if not p.active:
+                self.reactivate_player(user_id)
             logger.info(
                 f'id "{user_id}" already activated, not doing anything')
             return
@@ -209,7 +217,7 @@ class RedOrBlackGame():
         return True
 
     def _get_current_player(self):
-        if len(self.usernames_map) == 0:
+        if len(self.order) == 0:
             return None
         index = self.turn % len(self.order)
         current_player = self.order[index]
@@ -250,6 +258,14 @@ class RedOrBlackGame():
         self.start_game(user_id)
 
     def remove_player(self, user_id):
+        '''
+        This does a lot of things...
+            - First, make the player inactive
+            - remove all traces from 3/4 of the maps
+            - Move owner if the owner is leaving
+            - If that was the last player, end the game
+        '''
+        self.make_player_inactive(user_id)
         return_messages = []
         if user_id in self.id_map:
             p = self.id_map[user_id]
@@ -258,17 +274,41 @@ class RedOrBlackGame():
                 'type': 'PlayerLeft',
                 'player': p
             })
+
             del(self.id_map[user_id])
             del(self.usernames_map[p.username])
-            if not len(self.id_map):
-                logger.debug('Ending game due to lack of players')
+            del(self.registered_players[p.username])
+
+            # End the game if no players left
+            if len(self.id_map) == 0:
+                logger.debug(f"'{p.username}' is the last player in the"
+                             "game. Stopping the game")
                 self.end_game()
-            elif p in self.order:
-                index = self.order.index(p)
-                del(self.order[index])
+                return_messages.append({'type': 'GameStopped'})
+
+            # Update the owner if the owner is the player leaving
+            if self.owner == p:
+                if len(self.order) > 0:
+                    new_owner = self.order[0]
+                    return_messages.append({
+                        'type': 'NewOwner',
+                        'owner': new_owner
+                    })
+                    self.owner = new_owner
+                    logger.info(f'Setting new owner to {new_owner.username}')
+                else:
+                    logger.info(f'Setting new owner to None')
+                    self.owner = None
+
         return return_messages
 
     def make_player_inactive(self, user_id):
+        '''
+        This function does a lot...
+            - Mark the player as inactive
+            - Update the order of gameplay if it's that player's turn
+            - Remove the player from the order
+        '''
         return_messages = []
         if user_id in self.id_map:
             player = self.id_map[user_id]
@@ -279,29 +319,26 @@ class RedOrBlackGame():
                 'player': player
             })
 
-            if len(self.id_map) == 1:
-                logger.debug(f"'{player.username}' is the last player in the"
-                             "game. Stopping the game")
-                self.end_game()
-                return_messages.append({'type': 'GameStopped'})
-
             # Get the current player to check if it's the player that has
-            # become inactive
+            # become inactive.
             current_active_player = self._get_current_player()
-
-            # Remove the inactive player from the game order
-            index = self.order.index(player)
-            del(self.order[index])
-
-            if current_active_player == player and self.is_playing():
+            if current_active_player == player and not self.is_finished() and (len(self.id_map) > 1):
                 logger.debug(
                     f'Current player is becoming inactive, changing player')
+                # Bump the turn to progress the order
+                self.turn += 1
                 next_active_player = self._get_current_player()
+                self.turn -= 1
+
                 return_messages.append({
                     'type': 'PlayerTurnChanged',
                     'player': next_active_player
                 })
 
+            # Remove the player from the order
+            if player in self.order:
+                index = self.order.index(player)
+                del(self.order[index])
         return return_messages
 
     def reactivate_player(self, user_id):

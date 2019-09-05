@@ -48,12 +48,22 @@ function init() {
     $('#red_or_black_url').click(function () { _set_url_endpoint('redorblack'); });
 
     // Helper Buttons
+    $('#send_debug_button').click(function () {
+        if (websocketConn !== null) {
+            websocketConn.send('{"type": "Debug"}');
+            writeMessage('DEBUG sent');
+        }
+    });
+
     $('#create_game_button').click(function () { _create_game_data(); });
     $('#add_player_button').click(function () { _add_user_data(); });
     $('#register_player_button').click(function () { _add_register_player_data(); });
     $('#activate_id_button').click(function () { _add_activate_id_data(); });
     $('#start_game_button').click(function () { _add_start_game_data(); });
 
+    $("#open_react_link").on('click', function (e) {
+        _set_react_url();
+    });
 
 }
 
@@ -161,6 +171,12 @@ function _set_url_endpoint(endpoint) {
     $('#websocket_url').val(new_url)
 }
 
+function _set_react_url() {
+    const game_id = $('#activate_id_game_id').val();
+    const user_id = $('#activate_id_user_id').val();
+    const url = `http://localhost:3000?game_id=${game_id}&uid=${user_id}`;
+    $('#open_react_link').attr("href", url);
+}
 
 function updateFieldsHelper(msg) {
     let obj = JSON.parse(msg);
