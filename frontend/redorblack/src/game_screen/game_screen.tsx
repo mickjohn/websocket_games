@@ -1,6 +1,6 @@
 import React from 'react';
 import Player from '../player';
-import Guess from '../index';
+import Guess from '../utils/guess';
 
 interface Props {
     turn: number,

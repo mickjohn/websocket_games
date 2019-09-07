@@ -1,8 +1,13 @@
 .ConnStatus {
   text-align: center;
+  background-color: green;
 }
 
-.ConnStatus-header {
+.ConnStatus img {
+  border: 1px solid black;
+}
+
+/* .ConnStatus-header {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
@@ -11,17 +16,5 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
-}
+} */
 
-.ConnStatus-link {
-  color: #61dafb;
-}
-
-@keyframes ConnStatus-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
