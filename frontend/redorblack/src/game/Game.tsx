@@ -3,13 +3,13 @@ import config from '../config';
 import Guess from '../utils/guess';
 import UrlParams from '../utils/url_params';
 import GameState from '../utils/game_state';
+import './Game.css';
 
 // Components:
 import ConnStatus from '../connstatus/ConnStatus';
 import Lobby from '../lobby/lobby';
-import GameScreen from '../game_screen/game_screen';
+import GameScreen from '../game_screen/GameScreen';
 import Player from '../player';
-import { number } from 'prop-types';
 
 
 function parseState(s: string) {
@@ -109,7 +109,7 @@ class Game extends React.Component<Props, State>   {
 
         websocket.onopen = () => {
             // this.updateConnectionState();
-            this.setState({websocketStatus: websocket.readyState});
+            this.setState({ websocketStatus: websocket.readyState });
             this.joinGame();
         }
 
@@ -127,51 +127,27 @@ class Game extends React.Component<Props, State>   {
         return new UrlParams(uid, game_id);
     }
 
+    websocketIsConnected(): boolean {
+        return this.state.websocket.readyState === WebSocket.OPEN;
+    }
+
     redirect() {
         let location: Location = window.location;
         let protocol: string = location.protocol;
         // let host: string = location.host;
         // let url: string = `${protocol}//${host}/`;
         let url: string = `${protocol}://${config.baseUrl}/index.html`;
+        console.debug(`Redirecting to ${url}`);
         window.location.href = url;
     }
 
     componentDidMount() {
         this._ismounted = true;
-        // this.setState({ status: this._conn_status });
     }
 
     componentWillUnmount() {
         this._ismounted = false;
     }
-
-    getConnectionStatus() {
-        if (this.state.websocket !== null) {
-            let ws = this.state.websocket;
-            if (ws.readyState === WebSocket.OPEN) {
-                return "connected";
-            } else if (ws.readyState === WebSocket.CLOSED) {
-                return "not connected";
-            } else if (ws.readyState === WebSocket.CONNECTING) {
-                return "connecting";
-            } else if (ws.readyState === WebSocket.CLOSING) {
-                return "closing";
-            } else {
-                return "undefined";
-            }
-        } else {
-            return "not connected";
-        }
-    }
-
-    // updateConnectionState() {
-    //     console.log("Updating connection status");
-    //     if (this._ismounted) {
-    //         this.setState({ status: this.getConnectionStatus() });
-    //     } else {
-    //         this._conn_status = this.getConnectionStatus();
-    //     }
-    // }
 
     handleMessage(msg: any) {
         let obj = JSON.parse(msg);
@@ -225,11 +201,12 @@ class Game extends React.Component<Props, State>   {
     createWebsocket(url: string) {
         console.info("Creating websocket connection");
         let websocket: WebSocket = new WebSocket(url);
-        // websocket.onopen = () => {this.updateConnectionState();}
+
         // websocket.onclose = () => this.updateConnectionState();
         // websocket.onerror = () => this.updateConnectionState();
-        websocket.onclose = () => this.setState({websocketStatus: websocket.readyState});
-        websocket.onerror = () =>this.setState({websocketStatus: websocket.readyState});
+        // websocket.onopen = () => this.setState({websocketStatus: websocket.readyState});
+        websocket.onclose = () => this.setState({ websocketStatus: websocket.readyState });
+        websocket.onerror = () => this.setState({ websocketStatus: websocket.readyState });
         websocket.onmessage = (ev) => this.handleMessage(ev.data);
         return websocket;
     }
@@ -245,16 +222,8 @@ class Game extends React.Component<Props, State>   {
 
     render() {
         let stateElement: JSX.Element = <span></span>;
-        if (this.state.game_state === GameState.Lobby) {
-            stateElement = (
-                <Lobby
-                    players={this.state.players}
-                    owner={this.state.owner}
-                    player={this.state.player}
-                    onClick={this.state.start_game_handler}
-                />
-            );
-        } else if (this.state.game_state === GameState.NoState) {
+
+        if (this.state.game_state === GameState.NoState) {
             stateElement = <p>no state</p>;
         } else if (this.state.game_state === GameState.Playing) {
             if (this.state.player !== undefined) {
@@ -271,10 +240,25 @@ class Game extends React.Component<Props, State>   {
             stateElement = <p>Finished</p>;
         }
 
+        let lobby: JSX.Element;
+        if (this.state.game_state === GameState.Lobby && this.websocketIsConnected()) {
+            lobby = (
+                <Lobby
+                    players={this.state.players}
+                    owner={this.state.owner}
+                    player={this.state.player}
+                    onClick={this.state.start_game_handler}
+                />
+            );
+        } else {
+            lobby = <span></span>;
+        }
+
         return (
             <div>
-                <p> Red or Black </p>
+                <header className="GameHeader">Red or Black</header>
                 <ConnStatus status={this.state.websocketStatus} />
+                {lobby}
                 {stateElement}
             </div>
         );

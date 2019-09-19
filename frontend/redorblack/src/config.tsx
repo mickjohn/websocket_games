@@ -8,6 +8,7 @@ class Config {
     }
 }
 
-export const config: Config = new Config('192.168.1.1:8080','localhost');
+// export const config: Config = new Config('192.168.1.1:8080','localhost');
+export const config: Config = new Config('localhost:8080','localhost');
 
 export default config;

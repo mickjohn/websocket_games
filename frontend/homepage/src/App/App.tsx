@@ -6,8 +6,8 @@ import Game from '../Games';
 import Spinner from '../Spinner/Spinner';
 import ErrorBox from '../ErrorBox/ErrorBox';
 
-// const websocketBaseUrl = 'ws://localhost:8080'
-const websocketBaseUrl = 'ws://192.168.1.1:8080'
+const websocketBaseUrl = 'ws://localhost:8080'
+// const websocketBaseUrl = 'ws://192.168.1.1:8080'
 
 interface Props { };
 
@@ -168,9 +168,10 @@ class App extends React.Component<Props, State> {
 
               this.setState({ checking_msg: `User added, redirecting to ${verify_result.game_type} page` });
               setTimeout(() => {
-                console.debug('redirecting');
-                window.location.href = `http:/localhost/${game.path}?game_id=${code}&uid=${user_id}`;
-              }, 2000);
+                const redirectUrl = `/${game.path}?game_id=${code}&uid=${user_id}`;
+                console.debug(`redirecting to ${redirectUrl}`);
+                window.location.href = redirectUrl;
+              }, 1500);
 
             } else if (msg['type'] === 'Error') {
               // Clear the onclose handler

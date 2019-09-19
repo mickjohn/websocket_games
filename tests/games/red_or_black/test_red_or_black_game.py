@@ -1,6 +1,6 @@
 from websocketgames.games.red_or_black import game as red_or_black_game
 from websocketgames.games.red_or_black.game import RedOrBlackGame, GameStates, Player
-from websocketgames.deck import Card
+from websocketgames.deck import Card, Deck
 import pytest
 
 
@@ -79,14 +79,44 @@ def test_play_turn():
     player1 = game.add_player_by_username('mickjohn')
     player2 = game.add_player_by_username('player2')
     game.start_game(player1)
-    assert isinstance(game.play_turn(player1, 'Black'), bool)
-    assert isinstance(game.play_turn(player2, 'Red'), bool)
-    assert isinstance(game.play_turn(player1, 'Red'), bool)
-    assert isinstance(game.play_turn(player2, 'Black'), bool)
+    assert isinstance(game.play_turn(player1, 'Black'), dict)
+    assert isinstance(game.play_turn(player2, 'Red'), dict)
+    assert isinstance(game.play_turn(player1, 'Red'), dict)
+    assert isinstance(game.play_turn(player2, 'Black'), dict)
     print(game.stats['outcomes'])
     assert len(game.stats['outcomes']) == 4
     assert game.stats['outcomes'][1]['player'].username == 'mickjohn'
     assert game.stats['outcomes'][2]['player'].username == 'player2'
+
+
+def test_play_turn_penalty_is_correct():
+    game = RedOrBlackGame('AAAA')
+    game.penalty = 1
+    game.penalty_start = 2
+    game.penalty_increment = 5
+    deck = Deck()
+    deck.cards = [
+        Card('King', 'Hearts'),  # Red
+        Card('King', 'Hearts'),  # Red
+        Card('King', 'Spades'),  # Black
+        Card('King', 'Spades'),  # Black
+    ]
+    game.deck = deck
+
+    player1 = game.add_player_by_username('mickjohn')
+    player2 = game.add_player_by_username('player2')
+    game.start_game(player1)
+    game.play_turn(player1, 'Black')
+    assert game.penalty == 6
+
+    game.play_turn(player2, 'Black')
+    assert game.penalty == 11
+
+    game.play_turn(player1, 'Black')
+    assert game.penalty == 2
+
+    game.play_turn(player2, 'Red')
+    assert game.penalty == 7
 
 
 def test_play_turn_game_ends_when_deck_is_exhausted():

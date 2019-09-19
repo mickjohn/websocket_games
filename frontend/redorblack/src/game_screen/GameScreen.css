@@ -1,0 +1,22 @@
+.GameScreen {
+    margin: 0 auto;
+    max-width: 400px;
+    text-align: center;
+}
+
+.TopInfo {
+    max-width: 400px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.ButtonContainer {
+    display: flex;
+    justify-content: space-between;
+}
+
+.ButtonContainer button {
+    border: none;
+    padding: 0;
+    margin: 5px;
+}

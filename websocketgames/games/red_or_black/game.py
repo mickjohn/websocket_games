@@ -86,6 +86,9 @@ class RedOrBlackGame():
         self.owner = None
         self.order = []
         self.deck = Deck(shuffled=True)
+        self.penalty_increment = 1
+        self.penalty_start = 1
+        self.penalty = 1
         self.stats = {
             'outcomes': {}
         }
@@ -229,6 +232,12 @@ class RedOrBlackGame():
         card = self.deck.draw_card()
         colour = self.get_card_colour(card)
         correct = guess == colour
+        return_penalty = self.penalty
+
+        if correct:
+            self.penalty += self.penalty_increment
+        else:
+            self.penalty = self.penalty_start
 
         self.turn += 1
 
@@ -243,7 +252,10 @@ class RedOrBlackGame():
         if len(self.deck.cards) == 0:
             self.end_game()
 
-        return correct
+        return {
+            'correct': correct,
+            'penalty': return_penalty,
+        }
 
     def end_game(self):
         self.state = GameStates.FINISHED

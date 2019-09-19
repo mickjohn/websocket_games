@@ -1,5 +1,6 @@
 import json
 import logging
+import asyncio
 
 from websocketgames.games.red_or_black.handler import RedOrBlack
 
@@ -28,6 +29,13 @@ class WebsocketServer():
         self.game_handlers = {
             'redorblack': RedOrBlack(run_cleanup_thead=True)
         }
+
+    async def cleanup_loop(self):
+        logger.info("Server cleanup loop starting")
+        while(True):
+            for handler in list(self.game_handlers.values()):
+                await handler.run_cleanup()
+            await asyncio.sleep(5)
 
     async def handle_message(self, websocket, path):
         logger.debug(f'path = {path}')

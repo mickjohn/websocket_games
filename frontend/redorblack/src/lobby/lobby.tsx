@@ -1,5 +1,6 @@
 import React from 'react';
 import Player from '../player';
+import './lobby.css';
 
 interface Props {
     players: Map<string, Player>;
@@ -38,9 +39,13 @@ class Lobby extends React.Component<Props>   {
         const ownerElem: JSX.Element = this.getOwnerPart(this.props.owner);
 
         return (
-            <div>
+            <div className="Lobby">
+                <h4>Start the game when all players have joined</h4>
                 {ownerElem}
-                <ul>{listItems}</ul >
+                <div className="PlayerList">
+                    <h2>Players</h2>
+                    <ul>{listItems}</ul >
+                </div>
             </div >
         );
     }

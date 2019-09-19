@@ -1,0 +1,43 @@
+.Lobby {
+    margin: 0 auto;
+    text-align: center;
+}
+
+.Lobby button {
+    font-size: 20px;
+    border: none;
+    background-color: #ce1d1d;
+    border-radius: 10px;
+    color: white;
+    padding: 5px 10px;
+}
+
+.PlayerList {
+    margin: 20px auto 0 auto;
+    border: 1px solid black;
+    width: 70%;
+    /* background-color: #9ec4a9; */
+    border-radius: 10px;
+}
+
+.PlayerList ul {
+    padding: 0;
+    margin: 0 auto 20px auto;
+}
+
+.PlayerList li {
+    list-style-type: none;
+    font-size: 20px;
+    border-bottom: 1px solid black;
+}
+
+.PlayerList li:nth-child(2n - 1) {
+    border-bottom: 1px solid black;
+    background-color: #ddd;
+}
+
+.PlayerList h2 {
+    border-bottom: 1px solid black;
+    margin: 6px auto 0 auto;
+    padding: 6px;
+}
