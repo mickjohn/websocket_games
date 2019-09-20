@@ -141,6 +141,9 @@ class RedOrBlackGame():
         '''
         Activate a registered player
         '''
+        if user_id in self.id_map:
+            raise(UserAlreadyRegistered(f"User {user_id} is already activated"))
+
         if user_id not in self.registered_ids:
             err_msg = f"ID {user_id} not found in registered users"
             logger.error(err_msg)
@@ -277,8 +280,8 @@ class RedOrBlackGame():
             - Move owner if the owner is leaving
             - If that was the last player, end the game
         '''
-        self.make_player_inactive(user_id)
         return_messages = []
+        return_messages.extend(self.make_player_inactive(user_id))
         if user_id in self.id_map:
             p = self.id_map[user_id]
             logger.debug(f'Removing player {p.username}')
@@ -289,7 +292,8 @@ class RedOrBlackGame():
 
             del(self.id_map[user_id])
             del(self.usernames_map[p.username])
-            del(self.registered_players[p.username])
+            if p.username in self.registered_players:
+                del(self.registered_players[p.username])
 
             # End the game if no players left
             if len(self.id_map) == 0:
@@ -322,7 +326,7 @@ class RedOrBlackGame():
             - Remove the player from the order
         '''
         return_messages = []
-        if user_id in self.id_map:
+        if user_id in self.id_map and self.id_map[user_id].active:
             player = self.id_map[user_id]
             logger.debug(f'making player {player.username} inactive')
             player.active = False
@@ -334,23 +338,22 @@ class RedOrBlackGame():
             # Get the current player to check if it's the player that has
             # become inactive.
             current_active_player = self._get_current_player()
+            is_current_player = False
             if current_active_player == player and not self.is_finished() and (len(self.id_map) > 1):
                 logger.debug(
                     f'Current player is becoming inactive, changing player')
-                # Bump the turn to progress the order
-                self.turn += 1
-                next_active_player = self._get_current_player()
-                self.turn -= 1
-
-                return_messages.append({
-                    'type': 'PlayerTurnChanged',
-                    'player': next_active_player
-                })
+                is_current_player = True
 
             # Remove the player from the order
             if player in self.order:
                 index = self.order.index(player)
                 del(self.order[index])
+
+            if is_current_player:
+                return_messages.append({
+                    'type': 'OrderChanged',
+                    'order': self.order
+                })
         return return_messages
 
     def reactivate_player(self, user_id):
@@ -437,4 +440,7 @@ class UserNotAllowedToStart(Exception):
 
 
 class WrongStateException(Exception):
+    pass
+
+class UserAlreadyRegistered(Exception):
     pass

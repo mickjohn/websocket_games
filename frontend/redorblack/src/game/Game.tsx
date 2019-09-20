@@ -190,9 +190,13 @@ class Game extends React.Component<Props, State>   {
         } else if (obj['type'] === 'GameStarted') {
             this.setState({ game_state: GameState.Playing })
         } else if (obj['type'] === 'NewOwner') {
-            console.info('Updating Owner');
+            console.info('NewOwner: Updating Owner');
             const owner = new Player(obj['owner']['username'], obj['owner']['active'])
             this.setState({ owner: owner });
+        } else if (obj['type'] === 'OrderChanged') {
+            console.info("OrderChanged: updating order");
+            const order = obj['type']['order'];
+            this.setState({ order: order });
         } else {
             console.warn(`Unidentifed message type '${obj['type']}'`);
         }

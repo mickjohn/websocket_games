@@ -244,7 +244,7 @@ def test_player_order_changes_if_current_player_becomes_inactive():
     assert game._get_current_player() == p2
     assert resp == [
         {'type': 'PlayerDisconnected', 'player': p1},
-        {'type': 'PlayerTurnChanged', 'player': p2}
+        {'type': 'OrderChanged', 'order': [p2]}
     ]
 
 
@@ -269,8 +269,11 @@ def test_removing_last_player_ends_game():
     assert game.is_playing()
     resp = game.remove_player(uid)
     assert game.is_finished()
-    assert resp == [{'type': 'PlayerLeft',
-                     'player': p}, {'type': 'GameStopped'}]
+    assert resp == [
+        {'type': 'PlayerDisconnected', 'player': p},
+        {'type': 'PlayerLeft', 'player': p},
+        {'type': 'GameStopped'},
+    ]
 
 
 def test_can_reactivate_player():

@@ -1,5 +1,5 @@
 from websocketgames import code_generator
-from websocketgames.games.red_or_black.game import RedOrBlackGame, UserAlreadyExists, UserDoesNotExist, UserNotAllowedToStart
+from websocketgames.games.red_or_black.game import RedOrBlackGame, UserAlreadyExists, UserDoesNotExist, UserNotAllowedToStart, UserAlreadyRegistered
 from websocketgames.games.red_or_black import validator
 
 from collections import defaultdict
@@ -282,7 +282,7 @@ class RedOrBlack():
         '''
         Activate a registered Player
         '''
-        game = self.games[game_id]
+        game: RedOrBlackGame = self.games[game_id]
         try:
             self.mutex.acquire()
             game.activate_player(user_id)
@@ -304,6 +304,13 @@ class RedOrBlack():
                 'Error',
                 error=f"User with id {user_id} does not exist in game {game_id}"
             )
+        except UserAlreadyRegistered:
+            await send_message(
+                websocket,
+                'Error',
+                error=f"User with id {user_id} is already registered in {game_id}"
+            )
+            websocket.close()
 
     async def _register_player(self, username, game_id, websocket):
         game = self.games[game_id]
@@ -370,56 +377,3 @@ class RedOrBlack():
             del(self.inactive_player_counter[player_id])
 
         self.mutex.release()
-        # time.sleep(THREAD_PAUSE_TIME)
-        # await asyncio.sleep(THREAD_PAUSE_TIME)
-
-    # async def _player_cleanup_thread(self):
-    #     '''
-    #     Should be run in a thread
-    #     '''
-    #     logger.info("Starting up RedOrBlack handler cleanup thread")
-    #     while True:
-    #         self.mutex.acquire()
-    #         for player_id in self.inactive_player_ids:
-    #             if player_id not in self.clients:
-    #                 logger.debug(f"{player_id} has rejoined!")
-    #                 self.inactive_player_counter[player_id] = 0
-    #             else:
-    #                 self.inactive_player_counter[player_id] += THREAD_PAUSE_TIME
-
-    #         # Keep track of players that have been removed from games, so that
-    #         # we can remove all traces of them after they have disconnected
-    #         # and timed out.
-    #         removed_ids = []
-    #         for player_id, inactive_time in self.inactive_player_counter.items():
-    #             if inactive_time >= MAX_INACTIVE_TIME:
-    #                 # Remove player from their game
-    #                 client = self.clients[player_id]
-    #                 if client:
-    #                     game: RedOrBlackGame = self.games[client.game_id]
-    #                     player = game.id_map[player_id]
-    #                     logger.info(
-    #                         f"Removing {player.username} from game due to inactivity")
-    #                     messages_to_broadcast = game.remove_player(player_id)
-
-    #                     # Notify that a player has left
-    #                     if len(messages_to_broadcast):
-    #                         client: Client = self.clients[player_id]
-    #                         game_id = client.game_id
-    #                         websocket = client.websocket
-    #                         broadcast_sockets = self._get_websockets_for_game(
-    #                             game_id)
-    #                         for message in messages_to_broadcast:
-    #                             await broadcast_message(broadcast_sockets, message.type, **message, skip=[websocket])
-
-    #                     del(self.clients[player_id])
-    #                     removed_ids.append(player_id)
-
-    #         # Clean up the counter dict
-    #         for player_id in removed_ids:
-    #             self.inactive_player_ids.remove(player_id)
-    #             del(self.inactive_player_counter[player_id])
-
-    #         self.mutex.release()
-    #         # time.sleep(THREAD_PAUSE_TIME)
-    #         await asyncio.sleep(THREAD_PAUSE_TIME)
