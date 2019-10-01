@@ -36,7 +36,6 @@ function init() {
         if (websocketConn !== null) {
             var msg = messageToSend.val();
             websocketConn.send(msg);
-            // messagesTextArea.val('');
         }
     });
 
@@ -45,7 +44,7 @@ function init() {
     });
 
     // Set URL Buttons
-    $('#red_or_black_url').click(function () { _set_url_endpoint('redorblack'); });
+    $('#red_or_black_url').click(function () { _set_url_endpoint('RedOrBlack'); });
 
     // Helper Buttons
     $('#send_debug_button').click(function () {
