@@ -32,7 +32,6 @@ schemas = {
         "additionalProperties": False,
         "properties": {
             "type": {"type": "string"},
-            "game_id": {"type": "string"},
             "username": {"type": "string"},
         }
     },
@@ -44,7 +43,6 @@ schemas = {
         "properties": {
             "type": {"type": "string"},
             "username": {"type": "string"},
-            "game_id": {"type": "string"},
         }
     },
 
@@ -55,7 +53,6 @@ schemas = {
         "properties": {
             "type": {"type": "string"},
             "user_id": {"type": "string"},
-            "game_id": {"type": "string"},
         }
     },
 
@@ -66,7 +63,6 @@ schemas = {
         "properties": {
             "type": {"type": "string"},
             "user_id": {"type": "string"},
-            "game_id": {"type": "string"},
         }
     },
 }

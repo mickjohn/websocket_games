@@ -10,6 +10,8 @@ var messagesTextArea = null;
 var websockerUrl = null;
 var messageToSend = null;
 
+var game_id = 'NA';
+
 function init() {
     console.log("Init");
     connectButton = $('#websocket_connect');
@@ -115,24 +117,12 @@ function _create_game_data() {
     messageToSend.val(JSON.stringify(data, null, 2));
 }
 
-function _add_user_data() {
-    username = $('#add_player_username').val();
-    game_id = $('#add_player_game_id').val();
-    var data = {
-        "game_id": `${game_id}`,
-        "type": "AddPlayer",
-        "username": `${username}`
-    };
-    messageToSend.val(JSON.stringify(data, null, 2));
-}
-
 function _add_register_player_data() {
     game_id = $('#register_player_game_id').val();
     username = $('#register_player_username').val();
     var data = {
         "type": "Register",
         "username": `${username}`,
-        "game_id": `${game_id}`,
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }
@@ -143,7 +133,6 @@ function _add_activate_id_data() {
     var data = {
         "type": "Activate",
         "user_id": `${user_id}`,
-        "game_id": `${game_id}`,
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }
@@ -154,7 +143,6 @@ function _add_start_game_data() {
     var data = {
         "type": "StartGame",
         "user_id": `${user_id}`,
-        "game_id": `${game_id}`,
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }
@@ -171,7 +159,6 @@ function _set_url_endpoint(endpoint) {
 }
 
 function _set_react_url() {
-    const game_id = $('#activate_id_game_id').val();
     const user_id = $('#activate_id_user_id').val();
     const url = `http://localhost:3000?game_id=${game_id}&uid=${user_id}`;
     $('#open_react_link').attr("href", url);
@@ -181,10 +168,8 @@ function updateFieldsHelper(msg) {
     let obj = JSON.parse(msg);
     if (obj['type'] === 'GameCreated') {
         let id = obj['game_code'];
-        $('#activate_id_game_id').val(id);
-        $('#register_player_game_id').val(id);
-        $('#start_game_game_id').val(id);
-        $('#add_player_game_id').val(id);
+        game_id = id;
+        _set_url_endpoint(`game_${id}`);
     } else if (obj['type'] === 'Registered') {
         let uid = obj['user_id'];
         $('#activate_id_user_id').val(uid);

@@ -14,6 +14,9 @@ class Client:
             return self.__dict__ == other.__dict__
         return False
 
+    def __str__(self):
+        return f"{self.websocket}: {self.player}"
+
 
 class ClientRegistery:
     '''
@@ -23,6 +26,9 @@ class ClientRegistery:
 
     def __init__(self):
         self.clients = {}
+
+    def __str__(self):
+        return str(self.clients)
 
     def connect(self, websocket, player):
         client = Client(websocket, player)

@@ -78,7 +78,8 @@ class RedOrBlack:
             f"[{self.game_code}]: owner: {self.owner}\n"
             f"[{self.game_code}]: order: {self.p_reg.get_order()}\n"
             f"[{self.game_code}]: cards left: {len(self.deck.cards)}\n"
-            f"[{self.game_code}]: stats: {self.stats}\n"
+            f"[{self.game_code}]: player registery: {self.p_reg}\n"
+            f"[{self.game_code}]: client registery: {self.c_reg}\n"
         )
 
     def _debug(self):
@@ -145,6 +146,8 @@ class RedOrBlack:
         if self.owner == None:
             self.owner = player
 
+        self.c_reg.connect(websocket, player)
+
         await utils.broadcast_message(
             self.c_reg.websockets(),
             'PlayerAdded',
@@ -162,6 +165,11 @@ class RedOrBlack:
         return player
 
     async def handle_close(self, websocket):
+        '''
+        Handle the close of a websocket of an active client, and send out
+        messages of the new state. The playing order will change, the owner
+        could change.
+        '''
         if websocket not in self.c_reg.clients:
             return
         logger.debug("Handling websocket disconnection")
@@ -172,22 +180,26 @@ class RedOrBlack:
             self.inactive_player_ids.add(player.user_id)
             self.c_reg.remove(websocket)
             resp = []
+
+            # Send msg that player has disconnected
             resp.append({
                 'type': 'PlayerDisconnected',
                 'player': player,
             })
             
             if self.owner.user_id == player.user_id:
-                if len(self.p_reg.id_map):
+                if len(self.p_reg.get_order()):
                     new_owner = self.p_reg.get_order()[0]
                 else:
                     new_owner = None
                 self.owner = new_owner
+                # Inform players that there is a new owner
                 resp.append({
                     'type': 'NewOwner',
                     'owner': new_owner,
                 })
 
+            # The game order will have changed
             resp.append({
                 'type': 'Order',
                 'order': self.p_reg.get_order()

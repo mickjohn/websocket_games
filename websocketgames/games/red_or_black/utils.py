@@ -11,11 +11,17 @@ def remove_sensitive_info_from_message(msg):
     user ID from the message, since it's only needed by the one user
     '''
     keys_to_remove = []
+    if not isinstance(msg, dict):
+        return
+
     for k, v in msg.items():
         if k in SENSITIVE:
             keys_to_remove.append(k)
         if isinstance(v, dict):
             remove_sensitive_info_from_message(v)
+        elif isinstance(v, list):
+            for e in v:
+                remove_sensitive_info_from_message(e)
 
     for k in keys_to_remove:
         del(msg[k])

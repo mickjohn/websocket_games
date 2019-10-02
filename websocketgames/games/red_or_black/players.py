@@ -26,6 +26,9 @@ class PlayerRegistery():
         self.id_map = OrderedDict()
         self.uname_map = OrderedDict()
 
+    def __str__(self):
+        return str(self.__dict__)
+
     def add_player(self, player):
         self.id_map[player.user_id] = player
         self.uname_map[player.username] = player
