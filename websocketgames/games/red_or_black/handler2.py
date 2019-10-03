@@ -97,6 +97,8 @@ class RedOrBlack:
             await self.register_player(websocket, message)
         elif msg_type == 'Activate':
             await self.activate_player(websocket, message)
+        elif msg_type == 'StartGame':
+            await self.start_game(websocket, message)
 
     async def register_player(self, websocket, msg):
         '''

@@ -28,7 +28,7 @@ schemas = {
 
     'AddPlayer': {
         "type": "object",
-        "required": ["type", "game_id", "username"],
+        "required": ["type", "username"],
         "additionalProperties": False,
         "properties": {
             "type": {"type": "string"},
@@ -38,7 +38,7 @@ schemas = {
 
     'Register': {
         "type": "object",
-        "required": ["type", "username", "game_id"],
+        "required": ["type", "username"],
         "additionalProperties": False,
         "properties": {
             "type": {"type": "string"},
@@ -48,7 +48,7 @@ schemas = {
 
     'Activate': {
         "type": "object",
-        "required": ["type", "user_id", "game_id"],
+        "required": ["type", "user_id"],
         "additionalProperties": False,
         "properties": {
             "type": {"type": "string"},
@@ -58,7 +58,7 @@ schemas = {
 
     'StartGame': {
         "type": "object",
-        "required": ["type", "user_id", "game_id"],
+        "required": ["type", "user_id"],
         "additionalProperties": False,
         "properties": {
             "type": {"type": "string"},

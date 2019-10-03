@@ -123,7 +123,8 @@ class App extends React.Component<Props, State> {
       setTimeout(() => {
         // If so, create websocket
         if (verify_result.game_type !== null) {
-          const websocketUrl = `${websocketBaseUrl}/${verify_result.game_type.path}`;
+          const websocketUrl = `${websocketBaseUrl}/game_${code}`;
+          console.info("websocket URL = " + websocketUrl);
           const websocket: WebSocket = new WebSocket(websocketUrl);
           const game: Game = verify_result.game_type;
           this.setState({ ws: websocket });
@@ -134,7 +135,6 @@ class App extends React.Component<Props, State> {
           websocket.onopen = () => {
             const data = {
               'type': 'Register',
-              'game_id': code,
               'username': username,
             }
             websocket.send(JSON.stringify(data));
