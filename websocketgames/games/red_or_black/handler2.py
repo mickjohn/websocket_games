@@ -94,11 +94,11 @@ class RedOrBlack:
         msg_type = json_dict['type']
 
         if msg_type == 'Register':
-            await self.register_player(message, websocket)
+            await self.register_player(websocket, message)
         elif msg_type == 'Activate':
-            await self.activate_player(message, websocket)
+            await self.activate_player(websocket, message)
 
-    async def register_player(self, msg, websocket):
+    async def register_player(self, websocket, msg):
         '''
         Create a player, but don't add to the game. 'activate_player' must be
         called afterwards to enable the player. This does not add a new client
@@ -122,7 +122,7 @@ class RedOrBlack:
         await utils.send_message(websocket, 'Registered', user_id=new_player.user_id)
         return new_player
 
-    async def activate_player(self, msg, websocket):
+    async def activate_player(self, websocket, msg):
         '''
         Activate a registered Player
         '''
@@ -186,7 +186,7 @@ class RedOrBlack:
                 'type': 'PlayerDisconnected',
                 'player': player,
             })
-            
+
             if self.owner.user_id == player.user_id:
                 if len(self.p_reg.get_order()):
                     new_owner = self.p_reg.get_order()[0]
@@ -212,6 +212,33 @@ class RedOrBlack:
                     **msg,
                 )
         websocket.close()
+
+    async def start_game(self, websocket, msg):
+        '''
+        Start the game. If the user_id is not the ID of the owner, send an
+        error. If the game is started, broadcast a message saying the game
+        has started.
+        '''
+        user_id = msg['user_id']
+        if user_id not in self.p_reg.id_map:
+            await utils.send_message(
+                websocket,
+                'Error',
+                error=f"User with id {user_id} does not exist in game {self.game_code}"
+            )
+            return
+
+        player = self.p_reg.id_map[user_id]
+        if self.owner != player:
+            await utils.send_message(
+                websocket,
+                'Error',
+                error=f"User with id {user_id} not allowed to start the game"
+            )
+            return
+
+        self.state = GameStates.PLAYING        
+        await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
     def get_full_game_state(self):
         state = {

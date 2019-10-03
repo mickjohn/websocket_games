@@ -89,7 +89,7 @@ class Game extends React.Component<Props, State>   {
 
         this._ismounted = false;
         this._conn_status = "not connected";
-        let websocket: WebSocket = this.createWebsocket(`ws://${config.websocketUrl}/redorblack`);
+        let websocket: WebSocket = this.createWebsocket(`ws://${config.websocketUrl}/game_${params.game_id}`);
         this.state = {
             // status: this._conn_status,
             websocketStatus: WebSocket.CLOSED,
@@ -219,7 +219,6 @@ class Game extends React.Component<Props, State>   {
         let msg: any = {
             "type": "Activate",
             "user_id": this.state.user_id,
-            "game_id": this.state.game_id,
         }
         this.state.websocket.send(JSON.stringify(msg));
     }
@@ -275,7 +274,6 @@ class Game extends React.Component<Props, State>   {
         const msg = {
             'type': 'StartGame',
             'user_id': urlParams.user_id,
-            'game_id': urlParams.game_id,
         };
         this.state.websocket.send(JSON.stringify(msg));
     }
