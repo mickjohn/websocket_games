@@ -99,6 +99,8 @@ class RedOrBlack:
             await self.activate_player(websocket, message)
         elif msg_type == 'StartGame':
             await self.start_game(websocket, message)
+        elif msg_type == 'PlayTurn':
+            pass
 
     async def register_player(self, websocket, msg):
         '''
@@ -157,6 +159,12 @@ class RedOrBlack:
             skip=[websocket]
         )
 
+        await utils.broadcast_message(
+            self.c_reg.websockets(),
+            'OrderChanged',
+            order=self.p_reg.get_order()
+        )
+
         await utils.send_message(
             websocket,
             'YouJoined',
@@ -178,8 +186,8 @@ class RedOrBlack:
         client = self.c_reg.clients[websocket]
         if client and client.player:
             player = client.player
-            player.active = False
-            self.inactive_player_ids.add(player.user_id)
+            self.p_reg.deactivate(player)
+            # self.inactive_player_ids.add(player.user_id)
             self.c_reg.remove(websocket)
             resp = []
 
@@ -203,7 +211,7 @@ class RedOrBlack:
 
             # The game order will have changed
             resp.append({
-                'type': 'Order',
+                'type': 'OrderChanged',
                 'order': self.p_reg.get_order()
             })
 
@@ -241,6 +249,49 @@ class RedOrBlack:
 
         self.state = GameStates.PLAYING        
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
+
+    async def play_turn(self, websocket, msg):
+        player = self.c_reg.clients[websocket]
+        current_player = self.p_reg.get_order()[0]
+        return_penalty = self.penalty
+
+        if self.state != GameStates.PLAYING:
+            logger.error(f"Game is not in playing state")
+            return
+
+        if player != current_player:
+            logger.error(f"It's not the turn of '{player.username}'")
+            return
+
+        if not len(self.deck.cards):
+            logger.error('No cards left!')
+            return
+        
+        guess = msg['guess']
+        card = self.deck.draw_card()
+        correct = guess == card.get_colour()
+
+        # Update the stats of the game
+        self.stats['outcomes'][self.turn] = {
+            'player': player,
+            'turn': self.turn,
+            'guess': guess,
+            'outcome': correct,
+            'card': card,
+        }
+        if correct:
+            self.penalty += self.penalty_increment
+        else:
+            self.penalty = self.penalty_start
+
+        utils.send_message(
+            websocket,
+            'GuessOutcome',
+            correct=correct,
+            penalty=return_penalty,
+        )
+        
+
 
     def get_full_game_state(self):
         state = {

@@ -46,6 +46,12 @@ class Card():
         self.suit = suit
         self.rank = rank
 
+    def get_colour(self):
+        if self.suit in ['Clubs', 'Spades']:
+            return 'Black'
+        else:
+            return 'Red'
+
     def __str__(self):
         return f"{self.rank} of {self.suit}"
 

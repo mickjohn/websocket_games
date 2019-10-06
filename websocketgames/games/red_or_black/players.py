@@ -33,9 +33,14 @@ class PlayerRegistery():
         self.id_map[player.user_id] = player
         self.uname_map[player.username] = player
 
-    def remove_player(self, player):
+    def remove(self, player):
         del(self.id_map[player.user_id])
         del(self.uname_map[player.username])
+
+    def deactivate(self, player):
+        player.active = False
+        self.id_map.move_to_end(player.user_id)
+        self.uname_map.move_to_end(player.username)
 
     def uname_exists(self, uname):
         for p in list(self.id_map.values()):

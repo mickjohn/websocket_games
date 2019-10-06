@@ -30,10 +30,11 @@ class MockWebsocket():
 def four_player_game_lobby():
     '''
     Create a game with the following properties:
-        The Player registery has 4 players
-        The Client registery has 3 Clients
-        Game is in LOBBY state
-        The owner is p1
+        - The Player registery has 4 players
+        - The 4th player is inactive
+        - The Client registery has 3 Clients
+        - Game is in LOBBY state
+        - The owner is p1
     '''
     handler = RedOrBlack('ABCD')
     ws1 = MockWebsocket()
@@ -154,7 +155,7 @@ async def test_handle_close(mock_utils_send, four_player_game_lobby):
 
     assert len(handler.p_reg.get_order()) == 3
     await handler.handle_close(ws1)
-    assert len(handler.p_reg.id_map) == 4
+    assert len(handler.p_reg.id_map) == 3
     assert len(handler.p_reg.get_order()) == 2
     assert len(handler.c_reg.clients) == 2
     assert handler.owner == p2
@@ -163,7 +164,7 @@ async def test_handle_close(mock_utils_send, four_player_game_lobby):
             'username': 'mick', 'active': False}},
         {'type': 'NewOwner', 'owner': {
             'username': 'john', 'active': True}},
-        {'type': 'Order', 'order': [
+        {'type': 'OrderChanged', 'order': [
             {'username': 'john', 'active': True},
             {'username': 'dracula', 'active': True}
         ]}
@@ -198,17 +199,15 @@ async def test_start_game_fails_is_user_is_not_owner(mock_utils_send, four_playe
 
 
 @pytest.mark.asyncio
-async def test_get_current_player():
-    handler = RedOrBlack('ABCD')
+async def test_get_current_player(four_player_game_lobby):
+    (handler, __websockets, players) = four_player_game_lobby
+    (p1, p2, p3, p4) = players
     handler.state = GameStates.PLAYING
-    p1 = Player('mick', '123', active=True)
-    p2 = Player('john', '456', active=True)
-    handler.p_reg.add_player(p1)
-    handler.p_reg.add_player(p2)
     assert handler.get_current_player() == p1
     handler.turn += 1
     assert handler.get_current_player() == p2
     handler.turn += 1
+    assert handler.get_current_player() == p3
+    # p4 should be skipped because it's inactive
+    handler.turn += 1
     assert handler.get_current_player() == p1
-    p1.active = False
-    assert handler.get_current_player() == p2

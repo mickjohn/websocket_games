@@ -160,9 +160,6 @@ class App extends React.Component<Props, State> {
             console.debug(`msg from websocket = ${e.data}`);
             clearTimeout(wait_for_response_timeout);
             if (msg['type'] === 'Registered') {
-              // We don't need this anymore
-              // websocket.close();
-
               const user_id = msg['user_id'];
               console.debug(`user_id = ${user_id}`);
 

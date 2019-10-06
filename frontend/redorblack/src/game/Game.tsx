@@ -26,8 +26,6 @@ function parseState(s: string) {
 
 interface State {
     // Websocket connection status
-    // status: string;
-
     websocketStatus: number;
 
     // The websocket connection to the game server
@@ -82,7 +80,7 @@ class Game extends React.Component<Props, State>   {
         super(props);
 
         if (!this.hasUrlParams()) {
-            // this.redirect();
+            this.redirect();
         }
 
         let params: UrlParams = this.getUrlParams();
@@ -91,7 +89,6 @@ class Game extends React.Component<Props, State>   {
         this._conn_status = "not connected";
         let websocket: WebSocket = this.createWebsocket(`ws://${config.websocketUrl}/game_${params.game_id}`);
         this.state = {
-            // status: this._conn_status,
             websocketStatus: WebSocket.CLOSED,
             websocket: websocket,
             user_id: params.user_id,
@@ -108,7 +105,6 @@ class Game extends React.Component<Props, State>   {
         };
 
         websocket.onopen = () => {
-            // this.updateConnectionState();
             this.setState({ websocketStatus: websocket.readyState });
             this.joinGame();
         }
@@ -134,8 +130,6 @@ class Game extends React.Component<Props, State>   {
     redirect() {
         let location: Location = window.location;
         let protocol: string = location.protocol;
-        // let host: string = location.host;
-        // let url: string = `${protocol}//${host}/`;
         let url: string = `${protocol}://${config.baseUrl}/index.html`;
         console.debug(`Redirecting to ${url}`);
         window.location.href = url;
@@ -183,11 +177,13 @@ class Game extends React.Component<Props, State>   {
             map.set(new_player.username, new_player);
             this.setState({ players: map });
         } else if (obj['type'] === 'PlayerDisconnected') {
+            console.debug('Player disconnected');
             const username = obj['player']['username'];
             const map = this.state.players;
             map.delete(username);
             this.setState({ players: map });
         } else if (obj['type'] === 'GameStarted') {
+            console.debug('game starting');
             this.setState({ game_state: GameState.Playing })
         } else if (obj['type'] === 'NewOwner') {
             console.info('NewOwner: Updating Owner');
@@ -195,7 +191,7 @@ class Game extends React.Component<Props, State>   {
             this.setState({ owner: owner });
         } else if (obj['type'] === 'OrderChanged') {
             console.info("OrderChanged: updating order");
-            const order = obj['type']['order'];
+            const order = obj['order'];
             this.setState({ order: order });
         } else {
             console.warn(`Unidentifed message type '${obj['type']}'`);
@@ -205,10 +201,6 @@ class Game extends React.Component<Props, State>   {
     createWebsocket(url: string) {
         console.info("Creating websocket connection");
         let websocket: WebSocket = new WebSocket(url);
-
-        // websocket.onclose = () => this.updateConnectionState();
-        // websocket.onerror = () => this.updateConnectionState();
-        // websocket.onopen = () => this.setState({websocketStatus: websocket.readyState});
         websocket.onclose = () => this.setState({ websocketStatus: websocket.readyState });
         websocket.onerror = () => this.setState({ websocketStatus: websocket.readyState });
         websocket.onmessage = (ev) => this.handleMessage(ev.data);
@@ -237,7 +229,7 @@ class Game extends React.Component<Props, State>   {
                         makeGuessCallback={this.state.makeGuessHandler}
                         player={this.state.player}
                     />
-                )
+                );
             }
         } else if (this.state.game_state === GameState.Finished) {
             stateElement = <p>Finished</p>;
