@@ -61,6 +61,7 @@ function init() {
     $('#register_player_button').click(function () { _add_register_player_data(); });
     $('#activate_id_button').click(function () { _add_activate_id_data(); });
     $('#start_game_button').click(function () { _add_start_game_data(); });
+    $('#make_guess_button').click(function () { _add_make_guess_data(); });
 
     $("#open_react_link").on('click', function (e) {
         _set_react_url();
@@ -102,9 +103,9 @@ function onError(evt) {
 }
 
 function writeMessage(message) {
-    var date = Date.now();
-    var currentMessages = messagesTextArea.val();
-    var newMsg = `${currentMessages}\n${date} : ${message}`;
+    let date = Date.now();
+    let currentMessages = messagesTextArea.val();
+    let newMsg = `${currentMessages}\n${date} : ${message}`;
     messagesTextArea.val(newMsg);
 }
 
@@ -118,9 +119,8 @@ function _create_game_data() {
 }
 
 function _add_register_player_data() {
-    game_id = $('#register_player_game_id').val();
-    username = $('#register_player_username').val();
-    var data = {
+    let username = $('#register_player_username').val();
+    let data = {
         "type": "Register",
         "username": `${username}`,
     };
@@ -128,9 +128,8 @@ function _add_register_player_data() {
 }
 
 function _add_activate_id_data() {
-    game_id = $('#activate_id_game_id').val();
-    user_id = $('#activate_id_user_id').val();
-    var data = {
+    let user_id = $('#activate_id_user_id').val();
+    let data = {
         "type": "Activate",
         "user_id": `${user_id}`,
     };
@@ -138,11 +137,19 @@ function _add_activate_id_data() {
 }
 
 function _add_start_game_data() {
-    game_id = $('#start_game_game_id').val();
-    user_id = $('#start_game_owner_id').val();
-    var data = {
+    let user_id = $('#start_game_owner_id').val();
+    let data = {
         "type": "StartGame",
         "user_id": `${user_id}`,
+    };
+    messageToSend.val(JSON.stringify(data, null, 2));
+}
+
+function _add_make_guess_data() {
+    let guess = $("input[type='radio'][name='guess']:checked").val();
+    let data = {
+        "type": "PlayTurn",
+        "guess": `${guess}`
     };
     messageToSend.val(JSON.stringify(data, null, 2));
 }
@@ -174,5 +181,6 @@ function updateFieldsHelper(msg) {
         let uid = obj['user_id'];
         $('#activate_id_user_id').val(uid);
         $('#start_game_owner_id').val(uid);
+        $('#make_guess_player_id').val(uid);
     }
 }

@@ -1,7 +1,7 @@
 from websocketgames.games.red_or_black.handler2 import RedOrBlack, Client, GameStates
 from websocketgames.games.red_or_black.players import Player
 from websocketgames.games.red_or_black import utils
-from websocketgames import code_generator
+from websocketgames import code_generator, deck
 import pytest
 from pytest_asyncio.plugin import asyncio
 from pytest import fixture
@@ -155,7 +155,7 @@ async def test_handle_close(mock_utils_send, four_player_game_lobby):
 
     assert len(handler.p_reg.get_order()) == 3
     await handler.handle_close(ws1)
-    assert len(handler.p_reg.id_map) == 3
+    assert len(handler.p_reg.id_map) == 4
     assert len(handler.p_reg.get_order()) == 2
     assert len(handler.c_reg.clients) == 2
     assert handler.owner == p2
@@ -199,9 +199,39 @@ async def test_start_game_fails_is_user_is_not_owner(mock_utils_send, four_playe
 
 
 @pytest.mark.asyncio
+async def test_play_turn(mock_utils_send, four_player_game_lobby):
+    (handler, websockets, players) = four_player_game_lobby
+    (ws1, *_) = websockets
+    (p1, *_) = players
+    # Set cards to something we know
+    handler.state = GameStates.PLAYING
+    handler.deck.cards = [deck.Card('A', 'Clubs')] * 10
+
+    # Guess correct answer
+    msg = {'type': 'PlayTurn', 'guess': 'Black'}
+    await handler.play_turn(ws1, msg)
+    print(mock_utils_send.msgs)
+    assert mock_utils_send.broadcast == [
+        {
+            'type': 'GuessOutcome',
+            'correct': True,
+            'penalty': handler.penalty_start,
+            'new_penalty': handler.penalty,
+            'player': {
+                'username': p1.username,
+                'active': True,
+            }
+        }
+    ]
+    assert len(handler.stats['outcomes']) == 1
+    assert handler.turn == 1
+    assert handler.penalty == handler.penalty_start + handler.penalty_increment
+
+
+@pytest.mark.asyncio
 async def test_get_current_player(four_player_game_lobby):
     (handler, __websockets, players) = four_player_game_lobby
-    (p1, p2, p3, p4) = players
+    (p1, p2, p3, __p4) = players
     handler.state = GameStates.PLAYING
     assert handler.get_current_player() == p1
     handler.turn += 1

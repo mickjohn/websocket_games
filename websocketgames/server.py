@@ -39,7 +39,7 @@ class WebsocketServer():
         game_type = path.replace('/', '', 1)
         logger.debug(f'Using "{game_type}" handler to handle message')
 
-        game_id="not set"
+        game_id = "not set"
         if path.startswith('/game_'):
             game_id = path.replace('/game_', '')
 
@@ -53,7 +53,6 @@ class WebsocketServer():
                 if data['type'] == 'CreateGame':
                     await self.create_game(data, game_type, websocket)
                 else:
-                    # game_id = data['game_id']
                     if game_id not in self.games:
                         await game_not_found(game_id, websocket)
                         websocket.close()

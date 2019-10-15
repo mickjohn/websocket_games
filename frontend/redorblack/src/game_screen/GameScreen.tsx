@@ -13,31 +13,32 @@ interface Props {
 }
 
 
+function getCurrentPlayer(players: Array<Player>, turn: number): Player | undefined {
+    if (players.length === 0) {
+        return undefined;
+    }
+
+    let index: number;
+    index = turn % players.length;
+    return players[index];
+}
+
+function getNextPlayer(players: Array<Player>, turn: number): Player | undefined {
+    if (players.length === 0) {
+        return undefined;
+    }
+
+    let index: number;
+    index = (turn + 1) % players.length;
+    return players[index];
+}
+
 class GameScreen extends React.Component<Props>   {
 
-    getCurrentPlayer(players: Array<Player>, turn: number): Player | undefined {
-        if (players.length === 0) {
-            return undefined;
-        }
-
-        let index: number;
-        index = turn % players.length;
-        return players[index];
-    }
-
-    getNextPlayer(players: Array<Player>, turn: number): Player | undefined {
-        if (players.length === 0) {
-            return undefined;
-        }
-
-        let index: number;
-        index = (turn + 1) % players.length;
-        return players[index];
-    }
 
     createUpcomingPlayersBox(): JSX.Element {
-        const nextPlayer = this.getNextPlayer(this.props.order, this.props.turn);
-        const currentPlayer = this.getCurrentPlayer(this.props.order, this.props.turn);
+        const nextPlayer = getNextPlayer(this.props.order, this.props.turn);
+        const currentPlayer = getCurrentPlayer(this.props.order, this.props.turn);
 
         if (nextPlayer === undefined || currentPlayer === undefined) {
             return <span></span>;
@@ -68,7 +69,7 @@ class GameScreen extends React.Component<Props>   {
 
     render() {
         let isTurn: boolean = false;
-        const currentPlayer = this.getCurrentPlayer(this.props.order, this.props.turn);
+        const currentPlayer = getCurrentPlayer(this.props.order, this.props.turn);
         if (currentPlayer !== undefined && currentPlayer.username == this.props.player.username) {
             isTurn = true;
         } 

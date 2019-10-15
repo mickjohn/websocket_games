@@ -152,6 +152,9 @@ class Game extends React.Component<Props, State>   {
         }
 
         if (obj['type'] === 'YouJoined') {
+            /*************/
+            /* YouJoined */
+            /*************/
             console.debug("You have joined the game");
             const gameState = obj['game_state'];
             const player = new Player(obj['player']['username'], obj['player']['active']);
@@ -171,28 +174,60 @@ class Game extends React.Component<Props, State>   {
                 order: gameState['order'],
             });
         } else if (obj['type'] === 'PlayerAdded') {
+            /***************/
+            /* PlayerAdded */
+            /***************/
             console.debug("Adding new player");
             const new_player = new Player(obj['player']['username'], obj['player']['active']);
             const map = this.state.players;
             map.set(new_player.username, new_player);
             this.setState({ players: map });
         } else if (obj['type'] === 'PlayerDisconnected') {
+            /**********************/
+            /* PlayerDisconnected */
+            /**********************/
             console.debug('Player disconnected');
             const username = obj['player']['username'];
             const map = this.state.players;
             map.delete(username);
             this.setState({ players: map });
         } else if (obj['type'] === 'GameStarted') {
+            /***************/
+            /* GameStarted */
+            /***************/
             console.debug('game starting');
             this.setState({ game_state: GameState.Playing })
         } else if (obj['type'] === 'NewOwner') {
+            /************/
+            /* NewOwner */
+            /************/
             console.info('NewOwner: Updating Owner');
             const owner = new Player(obj['owner']['username'], obj['owner']['active'])
             this.setState({ owner: owner });
         } else if (obj['type'] === 'OrderChanged') {
+            /****************/
+            /* OrderChanged */
+            /****************/
             console.info("OrderChanged: updating order");
             const order = obj['order'];
             this.setState({ order: order });
+        } else if (obj['type'] === 'GuessOutcome') {
+            /****************/
+            /* GuessOutcome */
+            /****************/
+            const index: number = this.state.turn % this.state.order.length;
+            const currentPlayer = this.state.order[index];
+            if (this.state.player !== undefined) {
+                if (this.state.player.username == currentPlayer.username) {
+                    if (obj['correct'] == true) {
+                        alert('Correct guess!');
+                    } else {
+                        alert('Wrong guess!');
+                    }
+                }
+            }
+            // Update the turn number
+            this.setState({ turn: obj['turn'] });
         } else {
             console.warn(`Unidentifed message type '${obj['type']}'`);
         }
@@ -259,7 +294,9 @@ class Game extends React.Component<Props, State>   {
         );
     }
 
-    /* Callback */
+    /*************/
+    /* Callbacks */
+    /*************/
     startGameCallback() {
         console.debug('Start game clicked');
         let urlParams = this.state.url_params;
@@ -275,11 +312,15 @@ class Game extends React.Component<Props, State>   {
             const p = this.state.player;
             let currentPlayer: Player = this.state.order[this.state.turn % this.state.order.length];
             if (p.username === currentPlayer.username) {
+                let msg;
                 if (guess === Guess.Black) {
+                    msg = { 'guess': 'Black', 'type': 'PlayTurn' };
                     console.debug('Black guess clicked');
                 } else {
+                    msg = { 'guess': 'Red', 'type': 'PlayTurn' };
                     console.debug('Red guess clicked');
                 }
+                this.state.websocket.send(JSON.stringify(msg));
             } else {
                 console.log("It's not your turn")
             }

@@ -11,6 +11,7 @@ ALLOWED_MESSAGES = [
     'Register',
     'Activate',
     'StartGame',
+    'PlayTurn',
 ]
 
 '''
@@ -65,6 +66,16 @@ schemas = {
             "user_id": {"type": "string"},
         }
     },
+
+    'PlayTurn': {
+        "type": "object",
+        "required": ["type", "guess"],
+        "additionalProperties": False,
+        "properties": {
+            "type": {"type": "string"},
+            "guess": {"type": "string"},
+        }        
+    }
 }
 
 
