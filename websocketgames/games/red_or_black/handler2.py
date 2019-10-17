@@ -301,6 +301,7 @@ class RedOrBlack:
             self.c_reg.websockets(),
             'GuessOutcome',
             correct=correct,
+            guess=guess,
             turn=self.turn,
             penalty=return_penalty,
             new_penalty=self.penalty,

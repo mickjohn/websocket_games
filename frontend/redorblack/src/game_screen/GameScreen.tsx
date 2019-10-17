@@ -4,14 +4,15 @@ import Guess from '../utils/guess';
 import './GameScreen.css';
 import aceOfDiamonds from './ace_diamonds.png';
 import aceOfSpades from './ace_spades.png';
+import { GameHistory, GameHistoryItem } from '../GameHistory'
 
 interface Props {
     turn: number,
     order: Array<Player>,
     player: Player,
+    game_history: GameHistory,
     makeGuessCallback: (guess: Guess) => void;
 }
-
 
 function getCurrentPlayer(players: Array<Player>, turn: number): Player | undefined {
     if (players.length === 0) {
@@ -72,7 +73,7 @@ class GameScreen extends React.Component<Props>   {
         const currentPlayer = getCurrentPlayer(this.props.order, this.props.turn);
         if (currentPlayer !== undefined && currentPlayer.username == this.props.player.username) {
             isTurn = true;
-        } 
+        }
 
         let choiceMenu: JSX.Element;
         if (isTurn) {
@@ -91,12 +92,41 @@ class GameScreen extends React.Component<Props>   {
                 </div>
             );
         } else {
+            const username: string = currentPlayer !== undefined ? currentPlayer.username : '(unknown)';
             choiceMenu = (
-                <div className="ButtonContainer">
-                    <p> Not your turn </p>
+                <div>
+                    <p><span className="player-name">{username}</span> is guessing</p>
+                    <div className="loader">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
                 </div>
             );
         }
+
+        // const listItems = this.props.game_history.items().map((item) =>
+        //     <li>{item.username}--{item.guess} ----> {item.correct ? '✓' : 'X'} </li>
+        // );
+        const listItems: Array<JSX.Element> = new Array();
+
+        this.props.game_history.items().forEach(item => {
+            let outcome: JSX.Element;
+            let guess: JSX.Element;
+            if (item.guess === 'Red') {
+                guess = <span className='red-text'>⏺</span>;
+            } else {
+                guess = <span className='black-text'>⏺</span>;
+            }
+
+            if (item.correct) {
+                outcome = <span className='green-text'>✓</span>
+            } else {
+                outcome = <span className='red-text'>X</span>
+            }
+
+            listItems.push(<li><span>{item.username}</span> -- {guess} ----> {outcome} </li>);
+        });
 
         return (
             <div className="GameScreen">
@@ -109,6 +139,7 @@ class GameScreen extends React.Component<Props>   {
                     <p>Last Card: 5 hearts</p>
                     <button>Game Overview</button>
                 </div>
+                <ul>{listItems}</ul>
             </div>
         );
     }

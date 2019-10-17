@@ -214,6 +214,8 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
     assert mock_utils_send.broadcast == [
         {
             'type': 'GuessOutcome',
+            'guess': 'Black',
+            'turn': 1,
             'correct': True,
             'penalty': handler.penalty_start,
             'new_penalty': handler.penalty,

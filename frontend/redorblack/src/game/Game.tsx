@@ -4,6 +4,7 @@ import Guess from '../utils/guess';
 import UrlParams from '../utils/url_params';
 import GameState from '../utils/game_state';
 import './Game.css';
+import {GameHistory, GameHistoryItem} from '../GameHistory';
 
 // Components:
 import ConnStatus from '../connstatus/ConnStatus';
@@ -56,6 +57,9 @@ interface State {
     // Game turn number
     turn: number;
 
+    // The outcomes from the turns
+    game_history: GameHistory;
+
     // Array of players in order of thier turn
     order: Array<Player>;
 
@@ -94,6 +98,7 @@ class Game extends React.Component<Props, State>   {
             user_id: params.user_id,
             game_id: params.game_id,
             players: new Map(),
+            game_history: new GameHistory(10),
             player: undefined,
             owner: undefined,
             game_state: GameState.NoState,
@@ -226,7 +231,17 @@ class Game extends React.Component<Props, State>   {
                     }
                 }
             }
-            // Update the turn number
+            
+            const item = new GameHistoryItem(
+                obj['player']['username'],
+                obj['guess'],
+                obj['correct']
+            );
+
+            const items = this.state.game_history;
+            items.addItem(item);
+            // Update the turn number and history
+            this.setState({ turn: obj['turn'], game_history: items });
             this.setState({ turn: obj['turn'] });
         } else {
             console.warn(`Unidentifed message type '${obj['type']}'`);
@@ -263,6 +278,7 @@ class Game extends React.Component<Props, State>   {
                         order={this.state.order}
                         makeGuessCallback={this.state.makeGuessHandler}
                         player={this.state.player}
+                        game_history={this.state.game_history}
                     />
                 );
             }
