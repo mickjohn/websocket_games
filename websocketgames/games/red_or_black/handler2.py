@@ -61,7 +61,7 @@ class RedOrBlack:
         self.penalty_start = 1
         self.penalty = 1
         self.stats = {
-            'outcomes': {}
+            'outcomes': []
         }
 
         # Set of players that have disconnected
@@ -251,6 +251,7 @@ class RedOrBlack:
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
     async def play_turn(self, websocket, msg):
+        logger.debug('Playing turn')
         if websocket not in self.c_reg.clients:
             await utils.send_user_not_found(websocket)
             return
@@ -281,15 +282,17 @@ class RedOrBlack:
         guess = msg['guess']
         card = self.deck.draw_card()
         correct = guess == card.get_colour()
+        logger.info(
+            f"guess for {player.username}: card={card} guess={guess} correct={correct}")
 
         # Update the stats of the game
-        self.stats['outcomes'][self.turn] = {
+        self.stats['outcomes'].append({
             'player': player,
             'turn': self.turn,
             'guess': guess,
             'outcome': correct,
             'card': card,
-        }
+        })
         self.turn += 1
 
         if correct:
@@ -315,6 +318,7 @@ class RedOrBlack:
             'state': str(self.state),
             'owner': self.owner,
             'order': self.p_reg.get_order(),
+            'shortend_history': self.stats['outcomes'][0:10],
         }
         return state
 

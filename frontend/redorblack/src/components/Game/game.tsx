@@ -1,16 +1,16 @@
-import React from 'react';
-import config from '../config';
-import Guess from '../utils/guess';
-import UrlParams from '../utils/url_params';
-import GameState from '../utils/game_state';
+import React from 'react'
+import config from '../../config';
+import Guess from '../../utils/guess';
+import UrlParams from '../../utils/url_params';
+import GameState from '../../utils/game_state';
 import './Game.css';
-import {GameHistory, GameHistoryItem} from '../GameHistory';
+import { GameHistory, GameHistoryItem } from '../../GameHistory';
 
 // Components:
-import ConnStatus from '../connstatus/ConnStatus';
-import Lobby from '../lobby/lobby';
-import GameScreen from '../game_screen/GameScreen';
-import Player from '../player';
+import ConnStatus from '../ConnStatus/conn_status';
+import Lobby from '../Lobby/lobby';
+import GameScreen from '../GameScreen/game_screen';
+import Player from '../../player';
 
 
 function parseState(s: string) {
@@ -98,7 +98,7 @@ class Game extends React.Component<Props, State>   {
             user_id: params.user_id,
             game_id: params.game_id,
             players: new Map(),
-            game_history: new GameHistory(10),
+            game_history: new GameHistory(5),
             player: undefined,
             owner: undefined,
             game_state: GameState.NoState,
@@ -135,7 +135,7 @@ class Game extends React.Component<Props, State>   {
     redirect() {
         let location: Location = window.location;
         let protocol: string = location.protocol;
-        let url: string = `${protocol}://${config.baseUrl}/index.html`;
+        let url: string = `${protocol}//${config.baseUrl}/index.html`;
         console.debug(`Redirecting to ${url}`);
         window.location.href = url;
     }
@@ -165,11 +165,24 @@ class Game extends React.Component<Props, State>   {
             const player = new Player(obj['player']['username'], obj['player']['active']);
             const owner = new Player(gameState['owner']['username'], gameState['owner']['active']);
             const playersJson = gameState['players'];
+            const history = gameState['shortend_history'];
+
+            const tempHist: GameHistory = this.state.game_history;
+            for (let outcome of history) {
+                const histItem: GameHistoryItem = new GameHistoryItem(
+                    outcome['player']['username'],
+                    outcome['guess'],
+                    outcome['correct']
+                );
+                tempHist.addItem(histItem);
+            }
+
             const players: Map<string, Player> = new Map();
             for (let pj of playersJson) {
                 let newPlayer = new Player(pj['username'], pj['active']);
                 players.set(newPlayer.username, newPlayer);
             }
+
             this.setState({
                 player: player,
                 owner: owner,
@@ -177,6 +190,7 @@ class Game extends React.Component<Props, State>   {
                 game_state: parseState(gameState['state']),
                 turn: gameState['turn'],
                 order: gameState['order'],
+                game_history: tempHist,
             });
         } else if (obj['type'] === 'PlayerAdded') {
             /***************/
@@ -225,13 +239,13 @@ class Game extends React.Component<Props, State>   {
             if (this.state.player !== undefined) {
                 if (this.state.player.username == currentPlayer.username) {
                     if (obj['correct'] == true) {
-                        alert('Correct guess!');
+                        // Player is right!
                     } else {
-                        alert('Wrong guess!');
+                        // Player is wrong!
                     }
                 }
             }
-            
+
             const item = new GameHistoryItem(
                 obj['player']['username'],
                 obj['guess'],
@@ -242,7 +256,15 @@ class Game extends React.Component<Props, State>   {
             items.addItem(item);
             // Update the turn number and history
             this.setState({ turn: obj['turn'], game_history: items });
-            this.setState({ turn: obj['turn'] });
+            // this.setState({ turn: obj['turn'] });
+        } else if (obj['type'] === 'Error') {
+            /**********/
+            /* Errors */
+            /**********/
+            if (obj['error_type'] === 'GameNotFound') {
+                this.redirect();
+            }
+
         } else {
             console.warn(`Unidentifed message type '${obj['type']}'`);
         }

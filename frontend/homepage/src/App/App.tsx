@@ -6,8 +6,8 @@ import Game from '../Games';
 import Spinner from '../Spinner/Spinner';
 import ErrorBox from '../ErrorBox/ErrorBox';
 
-const websocketBaseUrl = 'ws://localhost:8080'
-// const websocketBaseUrl = 'ws://192.168.1.1:8080'
+// const websocketBaseUrl = 'ws://localhost:8080'
+const websocketBaseUrl = 'ws://192.168.1.3:8080'
 
 interface Props { };
 

@@ -1,0 +1,50 @@
+.HistoryBox table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.HistoryBox tr {
+    border-bottom: 2px solid #505759;
+}
+
+.HistoryBox tr:last-child {
+    border: none;
+}
+
+.HistoryBox tr:nth-child(6) {
+    border: none;
+    opacity: 0.3;
+}
+
+.username {
+    /* text-align: left; */
+    padding: 10px;
+}
+
+.red-guess {
+    border-radius: 25px;
+    background-color: #f84445;
+    border: 2px solid #fc7778;
+    padding: 0px 17px;
+}
+
+.black-guess {
+    border-radius: 25px;
+    background-color: #000;
+    border: 2px solid #222222;
+    padding: 0px 17px;
+}
+
+.good-outcome {
+    color: green;
+    font-weight: bold;
+}
+
+.bad-outcome {
+    color: red;
+    font-weight: bold;
+}
+
+.outcome {
+    text-align: right;
+}

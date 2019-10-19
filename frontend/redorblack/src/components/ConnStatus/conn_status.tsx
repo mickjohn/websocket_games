@@ -1,6 +1,6 @@
 import React from 'react';
 import conn_error from './connection_error.svg';
-import './ConnStatus.css';
+import './conn_status.css';
 
 export interface Props {
     status: number;

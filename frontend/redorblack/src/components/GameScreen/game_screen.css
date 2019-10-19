@@ -12,13 +12,14 @@
 
 .ButtonContainer {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-evenly;
 }
 
 .ButtonContainer button {
     border: none;
     padding: 0;
     margin: 5px;
+    background-color: #20282b;
 }
 
 .player-name {
@@ -56,16 +57,4 @@
         transform: translate(0, -20px);
         background: pink;
     }
-}
-
-.red-text {
-    color: red;
-}
-
-.green-text {
-    color: green;
-}
-
-.black-text {
-    color: black;
 }

@@ -1,10 +1,11 @@
 import React from 'react';
-import Player from '../player';
-import Guess from '../utils/guess';
-import './GameScreen.css';
+import Player from '../../player';
+import Guess from '../../utils/guess';
+import './game_screen.css';
 import aceOfDiamonds from './ace_diamonds.png';
 import aceOfSpades from './ace_spades.png';
-import { GameHistory, GameHistoryItem } from '../GameHistory'
+import { GameHistory } from '../../GameHistory'
+import HistoryBox from '../HistoryBox/history_box';
 
 interface Props {
     turn: number,
@@ -12,6 +13,16 @@ interface Props {
     player: Player,
     game_history: GameHistory,
     makeGuessCallback: (guess: Guess) => void;
+}
+
+enum GuessState {
+    ReadyToGuess,
+    WaitingForAnswer,
+    ShowingPenalty,
+}
+
+interface State {
+    guess_state: GuessState;
 }
 
 function getCurrentPlayer(players: Array<Player>, turn: number): Player | undefined {
@@ -34,8 +45,21 @@ function getNextPlayer(players: Array<Player>, turn: number): Player | undefined
     return players[index];
 }
 
-class GameScreen extends React.Component<Props>   {
+class GameScreen extends React.Component<Props, State>   {
 
+    guessButtonClicked(guess: Guess) {
+        this.props.makeGuessCallback(guess);
+        this.setState({ guess_state: GuessState.WaitingForAnswer });
+        // Hide the button and show the loading spinner
+        // ...
+    }
+
+    constructor(props: Props) {
+        super(props);
+        this.state = {
+            guess_state: GuessState.ReadyToGuess,
+        };
+    }
 
     createUpcomingPlayersBox(): JSX.Element {
         const nextPlayer = getNextPlayer(this.props.order, this.props.turn);
@@ -46,9 +70,7 @@ class GameScreen extends React.Component<Props>   {
         }
 
         if (nextPlayer === currentPlayer) {
-            return (
-                <p><b>Next Player:</b> You're the only player!</p>
-            );
+            return <p><b>Next Player:</b> You're the only player!</p>;
         }
 
         if (currentPlayer.username === this.props.player.username) {
@@ -68,6 +90,33 @@ class GameScreen extends React.Component<Props>   {
         )
     }
 
+    // The guess sections shows the red/black buttons
+    createGuessSection(): JSX.Element {
+        if (this.state.guess_state === GuessState.ReadyToGuess) {
+            return (
+                <div>
+                    <h3>It's your turn!</h3>
+                    <div className="ButtonContainer">
+                        <button onClick={(_e) => this.guessButtonClicked(Guess.Red)}>
+                            <img src={aceOfDiamonds} width="120px" alt="guess red" />
+                        </button>
+                        <button onClick={(_e) => this.guessButtonClicked(Guess.Black)}>
+                            <img src={aceOfSpades} width="120px" alt="guess black" />
+                        </button>
+                    </div>
+                </div>
+            );
+        } else {
+            return (
+                <div className="loader">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            )
+        }
+    }
+
     render() {
         let isTurn: boolean = false;
         const currentPlayer = getCurrentPlayer(this.props.order, this.props.turn);
@@ -77,20 +126,7 @@ class GameScreen extends React.Component<Props>   {
 
         let choiceMenu: JSX.Element;
         if (isTurn) {
-            choiceMenu = (
-                <div>
-                    <h3>It's your turn!</h3>
-                    <div className="ButtonContainer">
-                        <button onClick={(_e) => this.props.makeGuessCallback(Guess.Red)}>
-                            <p>Red</p>
-                            <img src={aceOfDiamonds} width="150px" alt="guess red" />
-                        </button>
-                        <button onClick={(_e) => this.props.makeGuessCallback(Guess.Black)}>
-                            <img src={aceOfSpades} width="150px" alt="guess black" />
-                        </button>
-                    </div>
-                </div>
-            );
+            choiceMenu = this.createGuessSection();
         } else {
             const username: string = currentPlayer !== undefined ? currentPlayer.username : '(unknown)';
             choiceMenu = (
@@ -105,29 +141,6 @@ class GameScreen extends React.Component<Props>   {
             );
         }
 
-        // const listItems = this.props.game_history.items().map((item) =>
-        //     <li>{item.username}--{item.guess} ----> {item.correct ? '✓' : 'X'} </li>
-        // );
-        const listItems: Array<JSX.Element> = new Array();
-
-        this.props.game_history.items().forEach(item => {
-            let outcome: JSX.Element;
-            let guess: JSX.Element;
-            if (item.guess === 'Red') {
-                guess = <span className='red-text'>⏺</span>;
-            } else {
-                guess = <span className='black-text'>⏺</span>;
-            }
-
-            if (item.correct) {
-                outcome = <span className='green-text'>✓</span>
-            } else {
-                outcome = <span className='red-text'>X</span>
-            }
-
-            listItems.push(<li><span>{item.username}</span> -- {guess} ----> {outcome} </li>);
-        });
-
         return (
             <div className="GameScreen">
                 <div className="TopInfo">
@@ -136,10 +149,9 @@ class GameScreen extends React.Component<Props>   {
                 </div>
                 {choiceMenu}
                 <div>
-                    <p>Last Card: 5 hearts</p>
                     <button>Game Overview</button>
                 </div>
-                <ul>{listItems}</ul>
+                <HistoryBox game_history={this.props.game_history} />
             </div>
         );
     }

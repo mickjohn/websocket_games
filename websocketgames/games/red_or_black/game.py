@@ -442,5 +442,6 @@ class UserNotAllowedToStart(Exception):
 class WrongStateException(Exception):
     pass
 
+
 class UserAlreadyRegistered(Exception):
     pass
