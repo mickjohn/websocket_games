@@ -1,6 +1,8 @@
 import jsonpickle
 import logging
+import asyncio
 from enum import auto, Enum
+
 from websocketgames.deck import Deck
 from websocketgames.games.red_or_black import validator
 from websocketgames.games.red_or_black import utils
@@ -251,6 +253,8 @@ class RedOrBlack:
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
     async def play_turn(self, websocket, msg):
+        # Before processing the turn, sleep for some time to add to the suspense
+        await asyncio.sleep(10)
         logger.debug('Playing turn')
         if websocket not in self.c_reg.clients:
             await utils.send_user_not_found(websocket)

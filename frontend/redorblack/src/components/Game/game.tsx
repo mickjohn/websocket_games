@@ -238,7 +238,7 @@ class Game extends React.Component<Props, State>   {
             const currentPlayer = this.state.order[index];
             if (this.state.player !== undefined) {
                 if (this.state.player.username == currentPlayer.username) {
-                    if (obj['correct'] == true) {
+                    if (obj['correct'] === true) {
                         // Player is right!
                     } else {
                         // Player is wrong!
@@ -256,7 +256,6 @@ class Game extends React.Component<Props, State>   {
             items.addItem(item);
             // Update the turn number and history
             this.setState({ turn: obj['turn'], game_history: items });
-            // this.setState({ turn: obj['turn'] });
         } else if (obj['type'] === 'Error') {
             /**********/
             /* Errors */

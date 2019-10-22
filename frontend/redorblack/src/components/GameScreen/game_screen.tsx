@@ -4,6 +4,7 @@ import Guess from '../../utils/guess';
 import './game_screen.css';
 import aceOfDiamonds from './ace_diamonds.png';
 import aceOfSpades from './ace_spades.png';
+import cardBack from './card_back.png';
 import { GameHistory } from '../../GameHistory'
 import HistoryBox from '../HistoryBox/history_box';
 
@@ -108,10 +109,14 @@ class GameScreen extends React.Component<Props, State>   {
             );
         } else {
             return (
-                <div className="loader">
-                    <div></div>
-                    <div></div>
-                    <div></div>
+                <div>
+                    <p>You guessed ..., you are ...</p>
+                    <img src={cardBack} width="100px" className="guessWaitingSpinner" />
+                    {/* <div className="loader">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div> */}
                 </div>
             )
         }
