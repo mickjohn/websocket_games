@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import config from '../../config';
 import Guess from '../../utils/guess';
 import UrlParams from '../../utils/url_params';
@@ -11,6 +11,10 @@ import ConnStatus from '../ConnStatus/conn_status';
 import Lobby from '../Lobby/lobby';
 import GameScreen from '../GameScreen/game_screen';
 import Player from '../../player';
+import HistoryBox from '../HistoryBox/history_box';
+import PenaltyBox from '../PenaltyBox/penalty_box';
+import CorrectBox from '../CorrectBox/correct_box';
+import DotsThrobber from '../DotsThrobber/dots_throbber';
 
 
 function parseState(s: string) {
@@ -60,13 +64,29 @@ interface State {
     // The outcomes from the turns
     game_history: GameHistory;
 
+    // The penalty to drink
+    penalty: number | null;
+
+    // If true show 'your correct box'
+    show_correct: boolean;
+
+    // Waiting for guess result
+    waiting_for_result: boolean;
+
     // Array of players in order of thier turn
     order: Array<Player>;
 
     // What to do when start game clicked
     start_game_handler: (event: any) => void;
 
+    // What to do when guess button is clicked
     makeGuessHandler: (guess: Guess) => void;
+
+    // Function to clear the penalty.
+    clearPenaltyHandler: () => void;
+
+    // Function to cleat the correct box.
+    clearCorrectCallback: () => void;
 }
 
 interface Props { }
@@ -100,12 +120,17 @@ class Game extends React.Component<Props, State>   {
             players: new Map(),
             game_history: new GameHistory(5),
             player: undefined,
+            show_correct: false,
             owner: undefined,
             game_state: GameState.NoState,
             start_game_handler: this.startGameCallback.bind(this),
             makeGuessHandler: this.makeGuessCallback.bind(this),
+            clearPenaltyHandler: this.clearPenaltyHandler.bind(this),
+            clearCorrectCallback: this.clearCorrectCallback.bind(this),
             url_params: params,
             turn: 0,
+            penalty: null,
+            waiting_for_result: false,
             order: [],
         };
 
@@ -172,7 +197,8 @@ class Game extends React.Component<Props, State>   {
                 const histItem: GameHistoryItem = new GameHistoryItem(
                     outcome['player']['username'],
                     outcome['guess'],
-                    outcome['correct']
+                    outcome['correct'],
+                    outcome['penalty']
                 );
                 tempHist.addItem(histItem);
             }
@@ -236,10 +262,12 @@ class Game extends React.Component<Props, State>   {
             /****************/
             const index: number = this.state.turn % this.state.order.length;
             const currentPlayer = this.state.order[index];
+            let show_correct: boolean = false;
             if (this.state.player !== undefined) {
                 if (this.state.player.username == currentPlayer.username) {
                     if (obj['correct'] === true) {
                         // Player is right!
+                        show_correct = true;
                     } else {
                         // Player is wrong!
                     }
@@ -249,13 +277,28 @@ class Game extends React.Component<Props, State>   {
             const item = new GameHistoryItem(
                 obj['player']['username'],
                 obj['guess'],
-                obj['correct']
+                obj['correct'],
+                obj['penalty']
             );
 
             const items = this.state.game_history;
             items.addItem(item);
             // Update the turn number and history
-            this.setState({ turn: obj['turn'], game_history: items });
+            // Don't accidently clear the penalty
+            let penalty: number | null = this.state.penalty;
+            if (this.state.penalty === null) {
+                console.log(`setting penalty to ${this.getPenaltyForThisPlayer()}`);
+                penalty = this.getPenaltyForThisPlayer();
+            }
+
+            this.setState({
+                turn: obj['turn'],
+                game_history: items,
+                penalty: penalty,
+                show_correct: show_correct,
+                waiting_for_result: false,
+            });
+
         } else if (obj['type'] === 'Error') {
             /**********/
             /* Errors */
@@ -286,13 +329,36 @@ class Game extends React.Component<Props, State>   {
         this.state.websocket.send(JSON.stringify(msg));
     }
 
+    getPenaltyForThisPlayer(): number | null {
+        if (this.state.player === undefined) {
+            return null;
+        }
+        const hist = this.state.game_history;
+        if (hist.items().length === 0) {
+            return null;
+        }
+        const item = hist.items()[0];
+        console.log(`hist item = ${item}`);
+        if (item.username === this.state.player.username) {
+            if (!item.correct) {
+                return item.penalty;
+            }
+        }
+        return null;
+    }
+
     render() {
-        let stateElement: JSX.Element = <span></span>;
+        let stateElement: JSX.Element | null = null;
 
         if (this.state.game_state === GameState.NoState) {
             stateElement = <p>no state</p>;
         } else if (this.state.game_state === GameState.Playing) {
-            if (this.state.player !== undefined) {
+            if (
+                this.state.player !== undefined
+                && this.state.penalty === null
+                && !this.state.waiting_for_result
+                && !this.state.show_correct
+            ) {
                 stateElement = (
                     <GameScreen
                         turn={this.state.turn}
@@ -302,6 +368,8 @@ class Game extends React.Component<Props, State>   {
                         game_history={this.state.game_history}
                     />
                 );
+            } else {
+                stateElement = null;
             }
         } else if (this.state.game_state === GameState.Finished) {
             stateElement = <p>Finished</p>;
@@ -321,12 +389,39 @@ class Game extends React.Component<Props, State>   {
             lobby = <span></span>;
         }
 
+        // let throbber: JSX.Element | null = null;
+        // if (this.state.waiting_for_result) {
+        //     throbber = (
+        //         <div>
+        //             <div className="loader">
+        //                 <div></div>
+        //                 <div></div>
+        //                 <div></div>
+        //             </div>
+        //         </div>
+        //     );
+        // }
+
         return (
             <div>
                 <header className="GameHeader">Red or Black</header>
-                <ConnStatus status={this.state.websocketStatus} />
-                {lobby}
-                {stateElement}
+                <div className="GameScreen">
+                    <ConnStatus status={this.state.websocketStatus} />
+                    <div className="InteractiveContent">
+                        {stateElement}
+                        <PenaltyBox
+                            penalty={this.state.penalty}
+                            clearPenaltyCallback={this.state.clearPenaltyHandler}
+                        />
+                        <CorrectBox
+                            show_box={this.state.show_correct}
+                            clearCorrectCallback={this.state.clearCorrectCallback}
+                        />
+                        <DotsThrobber show={this.state.waiting_for_result} />
+                    </div>
+                    {lobby}
+                    <HistoryBox game_history={this.state.game_history} />
+                </div>
             </div>
         );
     }
@@ -352,16 +447,21 @@ class Game extends React.Component<Props, State>   {
                 let msg;
                 if (guess === Guess.Black) {
                     msg = { 'guess': 'Black', 'type': 'PlayTurn' };
-                    console.debug('Black guess clicked');
                 } else {
                     msg = { 'guess': 'Red', 'type': 'PlayTurn' };
-                    console.debug('Red guess clicked');
                 }
                 this.state.websocket.send(JSON.stringify(msg));
-            } else {
-                console.log("It's not your turn")
+                this.setState({ waiting_for_result: true });
             }
         }
+    }
+
+    clearPenaltyHandler() {
+        this.setState({ penalty: null });
+    }
+
+    clearCorrectCallback() {
+        this.setState({ show_correct: false });
     }
 }
 

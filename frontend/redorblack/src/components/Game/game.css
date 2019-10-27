@@ -1,11 +1,20 @@
 .GameHeader {
-    background-color: #f84445;
-    min-height: 7vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: #eaeaea;
-    font-weight: bold;
-  }
+  background-color: #f84445;
+  min-height: 7vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: #eaeaea;
+  font-weight: bold;
+}
+
+.GameScreen {
+  margin: 0 auto;
+  max-width: 400px;
+}
+
+.InteractiveContent {
+  height: 340px;
+}

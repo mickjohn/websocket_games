@@ -4,7 +4,7 @@ import logging
 import jsonpickle
 
 # from websocketgames.games.red_or_black.handler import RedOrBlack
-from websocketgames.games.red_or_black.handler2 import RedOrBlack
+from websocketgames.games.red_or_black.handler import RedOrBlack
 from websocketgames import code_generator
 
 logger = logging.getLogger('websocketgames')

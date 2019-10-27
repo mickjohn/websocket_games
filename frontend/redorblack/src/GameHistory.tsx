@@ -5,10 +5,17 @@ export class GameHistoryItem {
     username: string;
     guess: string;
     correct: boolean;
-    constructor(username: string, guess: string, correct: boolean) {
+    penalty: number;
+
+    constructor(username: string, guess: string, correct: boolean, penalty: number) {
         this.username = username;
         this.guess = guess;
         this.correct = correct;
+        this.penalty = penalty;
+    }
+
+    public toString(): string {
+        return JSON.stringify(this);
     }
 }
 

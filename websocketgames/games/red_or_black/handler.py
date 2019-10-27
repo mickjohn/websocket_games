@@ -1,126 +1,70 @@
-from websocketgames import code_generator
-from websocketgames.games.red_or_black.game import RedOrBlackGame, UserAlreadyExists, UserDoesNotExist, UserNotAllowedToStart, UserAlreadyRegistered
+import jsonpickle
+import logging
+import asyncio
+from enum import auto, Enum
+
+from websocketgames.deck import Deck
 from websocketgames.games.red_or_black import validator
+from websocketgames.games.red_or_black import utils
+from websocketgames.games.red_or_black.errors import *
+from websocketgames.games.red_or_black.clients import Client, ClientRegistery
+from websocketgames.games.red_or_black.players import Player, PlayerRegistery
 
 from collections import defaultdict
-import logging
-from threading import Thread, Lock
-import time
-import jsonpickle
-import asyncio
+import uuid
 
 logger = logging.getLogger('websocketgames')
 
-MESSAGE_TYPES = [
-    'AddPlayer',
-    'CreateGame',
-    'ReaddPlayer',
-    'GameStatus',
-    'ValidateId',
-]
 
-SENDABLE_MESSAGES = [
-    'Error',
-    'PlayerAdded',
-    'YouJoined',
-    'GameCreated',
-    'Debug',
-    'ValidatedId',
-    'InvalidId',
-    'Registered',
-    'GameStarted',
-    'NewOwner'
-]
+class JsonEnumHandler(jsonpickle.handlers.BaseHandler):
 
-INTERNAL_MESSAGES = [
-    'PlayerRejoined',
-    'PlayerLeft',
-    'PlayerTurnChanged',
-    'GameStopped',
-    'PlayerDisconnected',
-]
+    def restore(self, obj):
+        pass
 
-SENDABLE_MESSAGES.extend(INTERNAL_MESSAGES)
-
-MAX_INACTIVE_TIME = 10
-THREAD_PAUSE_TIME = 5
-
-SENSITIVE = [
-    'user_id'
-]
+    def flatten(self, obj: Enum, data):
+        return obj.name
 
 
-def _remove_sensitive_info_from_message(msg):
-    '''
-    If broadcasting a message to all clients it's a good idea to remove the
-    user ID from the message, since it's only needed by the one user
-    '''
-    keys_to_remove = []
-    for k, v in msg.items():
-        if k in SENSITIVE:
-            keys_to_remove.append(k)
-        if isinstance(v, dict):
-            _remove_sensitive_info_from_message(v)
+class GameStates(Enum):
+    LOBBY = auto()
+    PLAYING = auto()
+    FINISHED = auto()
 
-    for k in keys_to_remove:
-        del(msg[k])
+    def __str__(self):
+        if self == self.LOBBY:
+            return 'LOBBY'
+        elif self == self.PLAYING:
+            return 'PLAYING'
+        elif self.FINISHED:
+            return 'FINISHED'
+        return ''
 
-
-class Client():
-    '''
-    A class containing a user id, game id & websocket connection
-    '''
-
-    def __init__(self, user_id, game_id, websocket):
-        self.user_id = user_id
-        self.game_id = game_id
-        self.websocket = websocket
-
-    def __eq__(self, other):
-        if isinstance(other, Client):
-            return self.__dict__ == other.__dict__
-        return False
+    def __repr__(self):
+        return str(self)
 
 
-async def send_message(websocket, msg_type, **kwargs):
-    if msg_type not in SENDABLE_MESSAGES:
-        raise Exception(f"Message type '{msg_type}' is unkown. "
-                        f"Known message types are {SENDABLE_MESSAGES}")
-    msg = {
-        'type': msg_type,
-        **kwargs
-    }
-
-    # Convert dict to json
-    json_msg = jsonpickle.encode(msg, unpicklable=False)
-
-    # Convert back to dict. This ensures that every object in the dict is made
-    # of basic types (aka json types)
-    dict_msg = jsonpickle.decode(json_msg)
-    if 'broadcast' in dict_msg and dict_msg['broadcast']:
-        _remove_sensitive_info_from_message(dict_msg)
-
-    # Convert the back to json
-    await websocket.send(jsonpickle.encode(dict_msg, unpicklable=False))
+# Use custom JSON handler for GameStates
+jsonpickle.handlers.registry.register(GameStates, JsonEnumHandler)
 
 
-async def broadcast_message(websockets, msg_type, skip=[], **kwargs):
-    for websocket in websockets:
-        if websocket.open and websocket not in skip:
-            await send_message(websocket, msg_type, **kwargs, broadcast=True)
+class RedOrBlack:
 
+    def __init__(self, game_code):
+        self.game_code = game_code
 
-class RedOrBlack():
+        self.p_reg = PlayerRegistery()
+        self.c_reg = ClientRegistery()
 
-    def __init__(self, run_cleanup_thead=False):
-        # Map of 'game id -> game'
-        self.games = {}
-
-        # Map of user_id -> Client
-        self.clients = {}
-
-        # Map of websocket -> Client
-        self.websockets = {}
+        self.turn = 0
+        self.state = GameStates.LOBBY
+        self.owner = None
+        self.deck = Deck(shuffled=True)
+        self.penalty_increment = 1
+        self.penalty_start = 1
+        self.penalty = 1
+        self.stats = {
+            'outcomes': []
+        }
 
         # Set of players that have disconnected
         self.inactive_player_ids = set()
@@ -128,252 +72,266 @@ class RedOrBlack():
         # Map of 'player id -> num of seconds inactive
         self.inactive_player_counter = defaultdict(int)
 
-        # Mutex for controlling access to some resources that can be modified
-        # by more than one thread
-        self.mutex = Lock()
+    def __repr__(self):
+        return (
+            f"\n[{self.game_code}]: registered_players: {self.p_reg}\n"
+            f"[{self.game_code}]: turn: {self.turn}\n"
+            f"[{self.game_code}]: state: {self.state}\n"
+            f"[{self.game_code}]: owner: {self.owner}\n"
+            f"[{self.game_code}]: order: {self.p_reg.get_order()}\n"
+            f"[{self.game_code}]: cards left: {len(self.deck.cards)}\n"
+            f"[{self.game_code}]: player registery: {self.p_reg}\n"
+            f"[{self.game_code}]: client registery: {self.c_reg}\n"
+        )
 
-        name = type(self).__name__
-        self.name = name
-        if name not in code_generator.GAME_MODULUS_TABLE:
-            raise Exception(f"{name} not registered in GAME_MODULUS_TABLE")
+    def _debug(self):
+        logger.debug(self)
 
-        # Start cleanup thread
-        # if run_cleanup_thead:
-            # await self._player_cleanup_thread()
-            # cleanup_thread = Thread(
-            #     target=self._player_cleanup_thread, args=())
-            # cleanup_thread.start()
+    async def handle_message(self, json_dict, websocket):
+        if json_dict['type'] == 'Debug':
+            self._debug()
+            return
+        validator.validate_msg(json_dict)
+        message = json_dict
+        msg_type = json_dict['type']
 
-    async def _send_game_not_found_error(self, game_id, websocket):
-        logger.error(f"Game with code '{game_id}' does not exist")
-        error_msg = {
-            'error': f"no RedOrBlack game with code {game_id} exists"
-        }
-        await send_message(websocket, 'Error', **error_msg)
+        if msg_type == 'Register':
+            await self.register_player(websocket, message)
+        elif msg_type == 'Activate':
+            await self.activate_player(websocket, message)
+        elif msg_type == 'StartGame':
+            await self.start_game(websocket, message)
+        elif msg_type == 'PlayTurn':
+            await self.play_turn(websocket, message)
 
-    def _get_websockets_for_game(self, game_id):
-        websockets = []
-        for client in list(self.clients.values()):
-            if client.game_id == game_id:
-                websockets.append(client.websocket)
-        logger.debug(f'brdcst skts = {websockets}')
-        return websockets
+    async def register_player(self, websocket, msg):
+        '''
+        Create a player, but don't add to the game. 'activate_player' must be
+        called afterwards to enable the player. This does not add a new client
+        '''
+        username = msg['username']
+        new_player = Player(username, str(uuid.uuid4()), False)
+
+        if self.p_reg.uname_exists(username):
+            err_msg = f"User {username} already registered in {self.game_code}"
+            logger.error(err_msg)
+            await utils.send_message(
+                websocket,
+                'Error',
+                error_type="UserAlreadyRegistered",
+                error=f"User with name {username} already registered in game"
+            )
+            return None
+
+        logger.info(f"Registering player {username} in game {self.game_code}")
+        self.p_reg.add_player(new_player)
+        await utils.send_message(websocket, 'Registered', user_id=new_player.user_id)
+        return new_player
+
+    async def activate_player(self, websocket, msg):
+        '''
+        Activate a registered Player
+        '''
+        user_id = msg['user_id']
+        if user_id not in self.p_reg.id_map:
+            await utils.send_message(
+                websocket,
+                'Error',
+                error=f"User with id {user_id} does not exist in game {self.game_code}"
+            )
+            return None
+
+        logger.info(f"Activating player {user_id} in game {self.game_code}")
+
+        if user_id in self.inactive_player_ids:
+            self.inactive_player_ids.remove(user_id)
+
+        player = self.p_reg.id_map[user_id]
+        player.active = True
+
+        if self.owner == None:
+            self.owner = player
+
+        self.c_reg.connect(websocket, player)
+
+        await utils.broadcast_message(
+            self.c_reg.websockets(),
+            'PlayerAdded',
+            player=player,
+            skip=[websocket]
+        )
+
+        await utils.broadcast_message(
+            self.c_reg.websockets(),
+            'OrderChanged',
+            order=self.p_reg.get_order()
+        )
+
+        await utils.send_message(
+            websocket,
+            'YouJoined',
+            player=player,
+            game_state=self.get_full_game_state(),
+        )
+
+        return player
 
     async def handle_close(self, websocket):
-        if websocket not in self.websockets:
+        '''
+        Handle the close of a websocket of an active client, and send out
+        messages of the new state. The playing order will change, the owner
+        could change.
+        '''
+        if websocket not in self.c_reg.clients:
             return
         logger.debug("Handling websocket disconnection")
-        client = self.websockets[websocket]
-        if client:
-            game = self.games[client.game_id]
-            logger.debug(f"Adding {client.user_id} to inactive IDs")
-            self.inactive_player_ids.add(client.user_id)
-            del(self.websockets[websocket])
-            resp = game.make_player_inactive(client.user_id)
-            broadcast_sockets = self._get_websockets_for_game(client.game_id)
+        client = self.c_reg.clients[websocket]
+        if client and client.player:
+            player = client.player
+            self.p_reg.deactivate(player)
+            # self.inactive_player_ids.add(player.user_id)
+            self.c_reg.remove(websocket)
+            resp = []
+
+            # Send msg that player has disconnected
+            resp.append({
+                'type': 'PlayerDisconnected',
+                'player': player,
+            })
+
+            if self.owner.user_id == player.user_id:
+                if len(self.p_reg.get_order()):
+                    new_owner = self.p_reg.get_order()[0]
+                else:
+                    new_owner = None
+                self.owner = new_owner
+                # Inform players that there is a new owner
+                resp.append({
+                    'type': 'NewOwner',
+                    'owner': new_owner,
+                })
+
+            # The game order will have changed
+            resp.append({
+                'type': 'OrderChanged',
+                'order': self.p_reg.get_order()
+            })
+
             for msg in resp:
-                await broadcast_message(
-                    broadcast_sockets,
+                await utils.broadcast_message(
+                    self.c_reg.websockets(),
                     msg['type'],
                     **msg,
                 )
         websocket.close()
 
-    async def handle_message(self, json_dict, websocket):
-        logger.debug("RedOrBlack handler handling message")
-
-        if json_dict['type'] == 'Debug':
-            logger.debug(f"games = {self.games}")
-            logger.debug(f"clients =  {self.clients}")
-            logger.debug(f"websockets =  {self.websockets}")
-            return
-        validator.validate_msg(json_dict)
-        message = json_dict
-
-        if message['type'] == 'CreateGame':
-            game_code = self._create_game()
-            await send_message(websocket, 'GameCreated', game_code=game_code)
-            return
-
-        if message['type'] == 'AddPlayer':
-            game_id = message['game_id']
-            if game_id not in self.games:
-                await self._send_game_not_found_error(game_id, websocket)
-                return
-
-            username = message['username']
-            try:
-                player = self._add_player(username, game_id, websocket)
-                broadcast_sockets = self._get_websockets_for_game(game_id)
-                await broadcast_message(broadcast_sockets, 'PlayerAdded', player=player, skip=[websocket])
-                await send_message(websocket, 'PlayerAdded', player=player)
-            except UserAlreadyExists:
-                await send_message(websocket,
-                                   'Error', error=f"User with name {username} already exists in game")
+    async def start_game(self, websocket, msg):
+        '''
+        Start the game. If the user_id is not the ID of the owner, send an
+        error. If the game is started, broadcast a message saying the game
+        has started.
+        '''
+        user_id = msg['user_id']
+        if user_id not in self.p_reg.id_map:
+            await utils.send_message(
+                websocket,
+                'Error',
+                error=f"User with id {user_id} does not exist in game {self.game_code}"
+            )
             return
 
-        if message['type'] == 'Register':
-            game_id = message['game_id']
-            if game_id not in self.games:
-                await self._send_game_not_found_error(game_id, websocket)
-                return
-            username = message['username']
-            logger.debug(f'Registering user {username}')
-            await self._register_player(username, game_id, websocket)
-            return
-
-        if message['type'] == 'Activate':
-            game_id = message['game_id']
-            user_id = message['user_id']
-            if game_id not in self.games:
-                await self._send_game_not_found_error(game_id, websocket)
-                return
-            logger.debug(f'Activating user {user_id}')
-            await self._activate_player(user_id, game_id, websocket)
-            return
-
-        if message['type'] == 'StartGame':
-            game_id = message['game_id']
-            user_id = message['user_id']
-            if game_id not in self.games:
-                await self._send_game_not_found_error(game_id, websocket)
-                return
-            logger.debug(f'Starting game user {game_id}')
-            await self._start_game(user_id, game_id, websocket)
-            return
-
-    def _create_game(self):
-        game_code = code_generator.generate_code(self.name)
-        self.games[game_code] = RedOrBlackGame(game_code)
-        logger.info(f"Created new game {game_code}")
-        return game_code
-
-    async def _start_game(self, user_id, game_id, websocket):
-        game = self.games[game_id]
-        try:
-            game.start_game(user_id)
-            broadcast_sockets = self._get_websockets_for_game(game_id)
-            await broadcast_message(broadcast_sockets, 'GameStarted')
-        except UserNotAllowedToStart:
-            await send_message(
+        player = self.p_reg.id_map[user_id]
+        if self.owner != player:
+            await utils.send_message(
                 websocket,
                 'Error',
                 error=f"User with id {user_id} not allowed to start the game"
             )
-        except UserDoesNotExist:
-            await send_message(
-                websocket,
-                'Error',
-                error=f"User with id {user_id} does not exist in game {game_id}"
-            )
-
-    def _add_player(self, username, game_id, websocket):
-        game = self.games[game_id]
-        self.mutex.acquire()
-        user_id = game.add_player_by_username(username)
-        player = game.id_map[user_id]
-        client = Client(user_id, game_id, websocket)
-        self.websockets[websocket] = client
-        self.clients[user_id] = client
-        self.mutex.release()
-        return player
-
-    async def _activate_player(self, user_id, game_id, websocket):
-        '''
-        Activate a registered Player
-        '''
-        game: RedOrBlackGame = self.games[game_id]
-        try:
-            self.mutex.acquire()
-            game.activate_player(user_id)
-            player = game.registered_ids[user_id]
-            client = Client(user_id, game_id, websocket)
-            self.websockets[websocket] = client
-            self.clients[user_id] = client
-
-            if user_id in self.inactive_player_ids:
-                self.inactive_player_ids.remove(user_id)
-
-            self.mutex.release()
-            broadcast_sockets = self._get_websockets_for_game(game_id)
-            await broadcast_message(broadcast_sockets, 'PlayerAdded', player=player, skip=[websocket])
-            await send_message(websocket, 'YouJoined', player=player, game_state=game.get_full_game_state())
-        except UserDoesNotExist:
-            await send_message(
-                websocket,
-                'Error',
-                error=f"User with id {user_id} does not exist in game {game_id}"
-            )
-        except UserAlreadyRegistered:
-            await send_message(
-                websocket,
-                'Error',
-                error=f"User with id {user_id} is already registered in {game_id}"
-            )
-            websocket.close()
-
-    async def _register_player(self, username, game_id, websocket):
-        game = self.games[game_id]
-        try:
-            player = game.register_player(username)
-            await send_message(websocket, 'Registered', user_id=player.user_id)
-        except UserAlreadyExists:
-            await send_message(
-                websocket,
-                'Error',
-                error=f"User with name {username} already registered in game"
-            )
-
-    async def _play_turn(self, message, websocket):
-        user_id = message['user_id']
-        game_id = message['game_id']
-        guess = message['guess']
-        if game_id not in self.games:
-            self._send_game_not_found_error(game_id, websocket)
             return
 
-        game = self.games[game_id]
+        self.state = GameStates.PLAYING
+        await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
-    async def run_cleanup(self):
-        self.mutex.acquire()
-        for player_id in self.inactive_player_ids:
-            if player_id not in self.clients:
-                logger.info(f"{player_id} has rejoined!")
-                self.inactive_player_counter[player_id] = 0
-            else:
-                self.inactive_player_counter[player_id] += THREAD_PAUSE_TIME
+    async def play_turn(self, websocket, msg):
+        # Before processing the turn, sleep for some time to add to the suspense
+        await asyncio.sleep(1)
+        logger.debug('Playing turn')
+        if websocket not in self.c_reg.clients:
+            await utils.send_user_not_found(websocket)
+            return
 
-        # Keep track of players that have been removed from games, so that
-        # we can remove all traces of them after they have disconnected
-        # and timed out.
-        removed_ids = []
-        for player_id, inactive_time in self.inactive_player_counter.items():
-            if inactive_time >= MAX_INACTIVE_TIME:
-                # Remove player from their game
-                client = self.clients[player_id]
-                if client:
-                    game: RedOrBlackGame = self.games[client.game_id]
-                    player = game.id_map[player_id]
-                    logger.info(
-                        f"Removing {player.username} from game due to inactivity")
-                    messages_to_broadcast = game.remove_player(player_id)
+        if self.c_reg.clients[websocket].player == None:
+            await utils.send_user_not_found(websocket)
+            return
 
-                    # Notify that a player has left
-                    if len(messages_to_broadcast):
-                        client: Client = self.clients[player_id]
-                        game_id = client.game_id
-                        websocket = client.websocket
-                        broadcast_sockets = self._get_websockets_for_game(
-                            game_id)
-                        for message in messages_to_broadcast:
-                            await broadcast_message(broadcast_sockets, message['type'], **message, skip=[websocket])
+        player = self.c_reg.clients[websocket].player
+        order = self.p_reg.get_order()
+        current_player = self.p_reg.get_order()[self.turn % len(order)]
+        return_penalty = self.penalty
 
-                    del(self.clients[player_id])
-                    removed_ids.append(player_id)
+        if self.state != GameStates.PLAYING:
+            logger.error(f"Game is not in playing state")
+            await utils.send_message(websocket, 'GameNotStarted')
+            return
 
-        # Clean up the counter dict
-        for player_id in removed_ids:
-            self.inactive_player_ids.remove(player_id)
-            del(self.inactive_player_counter[player_id])
+        if player != current_player:
+            logger.error(f"It's not the turn of '{player.username}'")
+            await utils.send_message(websocket, 'NotPlayerTurn')
+            return
 
-        self.mutex.release()
+        if not len(self.deck.cards):
+            logger.error('No cards left!')
+            return
+
+        guess = msg['guess']
+        card = self.deck.draw_card()
+        correct = guess == card.get_colour()
+        logger.info(
+            f"guess for {player.username}: card={card} guess={guess} correct={correct}")
+
+        # Update the stats of the game
+        self.stats['outcomes'].append({
+            'player': player,
+            'turn': self.turn,
+            'guess': guess,
+            'outcome': correct,
+            'card': card,
+        })
+        self.turn += 1
+
+        if correct:
+            self.penalty += self.penalty_increment
+        else:
+            self.penalty = self.penalty_start
+
+        await utils.broadcast_message(
+            self.c_reg.websockets(),
+            'GuessOutcome',
+            correct=correct,
+            guess=guess,
+            turn=self.turn,
+            penalty=return_penalty,
+            new_penalty=self.penalty,
+            player=player,
+        )
+
+    def get_full_game_state(self):
+        state = {
+            'players': list(self.p_reg.id_map.values()),
+            'turn': self.turn,
+            'state': str(self.state),
+            'owner': self.owner,
+            'order': self.p_reg.get_order(),
+            'shortend_history': self.stats['outcomes'][0:10],
+        }
+        return state
+
+    def get_current_player(self):
+        if self.state != GameStates.PLAYING:
+            return None
+
+        order = self.p_reg.get_order()
+        order_len = len(order)
+        if not order_len:
+            return None
+        return order[self.turn % order_len]

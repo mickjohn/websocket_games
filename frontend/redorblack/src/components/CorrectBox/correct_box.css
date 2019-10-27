@@ -1,14 +1,14 @@
-.PenaltyBox {
+.CorrectBox {
     margin: 0 auto;
     max-width: 80%;
     border-radius: 9px;
     font-size: 26px;
     font-weight: bold;
-    background-color: #f84445;
+    background-color: #16883d;
     padding: 7px 0;
 }
 
-.PenaltyBox button {
+.CorrectBox button {
     background-color: #20282b;
     font-size: 20px;
     font-weight: 700;

@@ -4,9 +4,7 @@ import Guess from '../../utils/guess';
 import './game_screen.css';
 import aceOfDiamonds from './ace_diamonds.png';
 import aceOfSpades from './ace_spades.png';
-import cardBack from './card_back.png';
 import { GameHistory } from '../../GameHistory'
-import HistoryBox from '../HistoryBox/history_box';
 
 interface Props {
     turn: number,
@@ -14,16 +12,6 @@ interface Props {
     player: Player,
     game_history: GameHistory,
     makeGuessCallback: (guess: Guess) => void;
-}
-
-enum GuessState {
-    ReadyToGuess,
-    WaitingForAnswer,
-    ShowingPenalty,
-}
-
-interface State {
-    guess_state: GuessState;
 }
 
 function getCurrentPlayer(players: Array<Player>, turn: number): Player | undefined {
@@ -46,20 +34,28 @@ function getNextPlayer(players: Array<Player>, turn: number): Player | undefined
     return players[index];
 }
 
-class GameScreen extends React.Component<Props, State>   {
+class GameScreen extends React.Component<Props>   {
 
     guessButtonClicked(guess: Guess) {
         this.props.makeGuessCallback(guess);
-        this.setState({ guess_state: GuessState.WaitingForAnswer });
-        // Hide the button and show the loading spinner
-        // ...
     }
 
     constructor(props: Props) {
         super(props);
-        this.state = {
-            guess_state: GuessState.ReadyToGuess,
-        };
+    }
+
+    getPenaltyForThisPlayer(): number | null {
+        const hist = this.props.game_history;
+        if (hist.items().length === 0) {
+            return null;
+        }
+        const item = hist.items()[0];
+        if (item.username === this.props.player.username) {
+            if (item.correct) {
+                return item.penalty;
+            }
+        }
+        return null;
     }
 
     createUpcomingPlayersBox(): JSX.Element {
@@ -93,33 +89,19 @@ class GameScreen extends React.Component<Props, State>   {
 
     // The guess sections shows the red/black buttons
     createGuessSection(): JSX.Element {
-        if (this.state.guess_state === GuessState.ReadyToGuess) {
-            return (
-                <div>
-                    <h3>It's your turn!</h3>
-                    <div className="ButtonContainer">
-                        <button onClick={(_e) => this.guessButtonClicked(Guess.Red)}>
-                            <img src={aceOfDiamonds} width="120px" alt="guess red" />
-                        </button>
-                        <button onClick={(_e) => this.guessButtonClicked(Guess.Black)}>
-                            <img src={aceOfSpades} width="120px" alt="guess black" />
-                        </button>
-                    </div>
+        return (
+            <div>
+                <h3>It's your turn!</h3>
+                <div className="ButtonContainer">
+                    <button onClick={(_e) => this.guessButtonClicked(Guess.Red)}>
+                        <img src={aceOfDiamonds} width="120px" alt="guess red" />
+                    </button>
+                    <button onClick={(_e) => this.guessButtonClicked(Guess.Black)}>
+                        <img src={aceOfSpades} width="120px" alt="guess black" />
+                    </button>
                 </div>
-            );
-        } else {
-            return (
-                <div>
-                    <p>You guessed ..., you are ...</p>
-                    <img src={cardBack} width="100px" className="guessWaitingSpinner" />
-                    {/* <div className="loader">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div> */}
-                </div>
-            )
-        }
+            </div>
+        );
     }
 
     render() {
@@ -156,7 +138,6 @@ class GameScreen extends React.Component<Props, State>   {
                 <div>
                     <button>Game Overview</button>
                 </div>
-                <HistoryBox game_history={this.props.game_history} />
             </div>
         );
     }

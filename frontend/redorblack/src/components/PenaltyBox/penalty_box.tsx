@@ -2,7 +2,8 @@ import React from 'react';
 import './penalty_box.css';
 
 interface Props {
-    penalty: number;
+    penalty: number | null;
+    clearPenaltyCallback: () => void;
 }
 
 
@@ -13,11 +14,18 @@ class PenaltyBox extends React.Component<Props>   {
     }
 
     render() {
-        return (
-            <div className="penalty-box">
-                Wrong! drink for {this.props.penalty}
-            </div>
-        );
+        if (this.props.penalty !== null) {
+            return (
+                <div className="PenaltyBox">
+                    Wrong! drink for {this.props.penalty}s
+                    <br/>
+                    <button onClick={(_e) => this.props.clearPenaltyCallback()}>
+                        Ok!
+                    </button>
+                </div>
+            );
+        }
+        return null
     }
 }
 
