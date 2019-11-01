@@ -313,6 +313,7 @@ class RedOrBlack:
             penalty=return_penalty,
             new_penalty=self.penalty,
             player=player,
+            cards_left=len(self.deck.cards),
         )
 
     def get_full_game_state(self):

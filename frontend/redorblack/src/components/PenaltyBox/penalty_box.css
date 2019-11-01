@@ -1,6 +1,7 @@
 .PenaltyBox {
     margin: 0 auto;
     max-width: 80%;
+    width: 80%;
     border-radius: 9px;
     font-size: 26px;
     font-weight: bold;

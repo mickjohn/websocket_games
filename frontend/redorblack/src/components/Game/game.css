@@ -16,5 +16,7 @@
 }
 
 .InteractiveContent {
-  height: 340px;
+  height: 160px;
+  display: flex;
+  align-items: center;
 }

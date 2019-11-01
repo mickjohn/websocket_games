@@ -15,6 +15,7 @@ import HistoryBox from '../HistoryBox/history_box';
 import PenaltyBox from '../PenaltyBox/penalty_box';
 import CorrectBox from '../CorrectBox/correct_box';
 import DotsThrobber from '../DotsThrobber/dots_throbber';
+import GameInfo from '../GameInfo/game_info';
 
 
 function parseState(s: string) {
@@ -91,11 +92,6 @@ interface State {
 
 interface Props { }
 
-/*
-check the url for parameters and try to join
-otherwise, redirect
-*/
-
 class Game extends React.Component<Props, State>   {
     _ismounted: boolean;
     _conn_status: string;
@@ -141,12 +137,12 @@ class Game extends React.Component<Props, State>   {
 
     }
 
-    hasUrlParams() {
+    hasUrlParams(): boolean {
         let params = new URLSearchParams(document.location.search.substring(1));
         return params.has("uid") && params.has("game_id");
     }
 
-    getUrlParams() {
+    getUrlParams(): UrlParams {
         let params = new URLSearchParams(document.location.search.substring(1));
         let uid: string = params.get("uid") || '';
         let game_id: string = params.get("game_id") || '';
@@ -157,7 +153,7 @@ class Game extends React.Component<Props, State>   {
         return this.state.websocket.readyState === WebSocket.OPEN;
     }
 
-    redirect() {
+    redirect(): void {
         let location: Location = window.location;
         let protocol: string = location.protocol;
         let url: string = `${protocol}//${config.baseUrl}/index.html`;
@@ -165,15 +161,15 @@ class Game extends React.Component<Props, State>   {
         window.location.href = url;
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this._ismounted = true;
     }
 
-    componentWillUnmount() {
+    componentWillUnmount(): void {
         this._ismounted = false;
     }
 
-    handleMessage(msg: any) {
+    handleMessage(msg: any): void {
         let obj = JSON.parse(msg);
         console.debug(obj);
         if (obj['type'] === null) {
@@ -312,7 +308,7 @@ class Game extends React.Component<Props, State>   {
         }
     }
 
-    createWebsocket(url: string) {
+    createWebsocket(url: string): WebSocket {
         console.info("Creating websocket connection");
         let websocket: WebSocket = new WebSocket(url);
         websocket.onclose = () => this.setState({ websocketStatus: websocket.readyState });
@@ -321,7 +317,7 @@ class Game extends React.Component<Props, State>   {
         return websocket;
     }
 
-    joinGame() {
+    joinGame(): void {
         let msg: any = {
             "type": "Activate",
             "user_id": this.state.user_id,
@@ -389,24 +385,16 @@ class Game extends React.Component<Props, State>   {
             lobby = <span></span>;
         }
 
-        // let throbber: JSX.Element | null = null;
-        // if (this.state.waiting_for_result) {
-        //     throbber = (
-        //         <div>
-        //             <div className="loader">
-        //                 <div></div>
-        //                 <div></div>
-        //                 <div></div>
-        //             </div>
-        //         </div>
-        //     );
-        // }
-
         return (
             <div>
                 <header className="GameHeader">Red or Black</header>
                 <div className="GameScreen">
                     <ConnStatus status={this.state.websocketStatus} />
+                    <GameInfo
+                        turn={this.state.turn}
+                        order={this.state.order}
+                        player={this.state.player}
+                    />
                     <div className="InteractiveContent">
                         {stateElement}
                         <PenaltyBox
@@ -463,6 +451,10 @@ class Game extends React.Component<Props, State>   {
     clearCorrectCallback() {
         this.setState({ show_correct: false });
     }
+
+    /*****************/
+    /* End Callbacks */
+    /*****************/
 }
 
 
