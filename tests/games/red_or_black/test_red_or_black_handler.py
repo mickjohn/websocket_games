@@ -215,6 +215,7 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
         {
             'type': 'GuessOutcome',
             'guess': 'Black',
+            'cards_left': 9,
             'turn': 1,
             'correct': True,
             'penalty': handler.penalty_start,

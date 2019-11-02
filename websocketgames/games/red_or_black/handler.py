@@ -49,7 +49,7 @@ jsonpickle.handlers.registry.register(GameStates, JsonEnumHandler)
 
 class RedOrBlack:
 
-    def __init__(self, game_code):
+    def __init__(self, game_code, cleanup_handler=None):
         self.game_code = game_code
 
         self.p_reg = PlayerRegistery()
@@ -65,6 +65,8 @@ class RedOrBlack:
         self.stats = {
             'outcomes': []
         }
+
+        self.cleanup_handler = cleanup_handler
 
         # Set of players that have disconnected
         self.inactive_player_ids = set()
@@ -252,6 +254,10 @@ class RedOrBlack:
         self.state = GameStates.PLAYING
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
+    '''
+    Take a players guess and progress the game by one turn, and send the
+    outcome to all the players in the game.
+    '''
     async def play_turn(self, websocket, msg):
         # Before processing the turn, sleep for some time to add to the suspense
         await asyncio.sleep(1)
@@ -316,6 +322,10 @@ class RedOrBlack:
             cards_left=len(self.deck.cards),
         )
 
+    '''
+    Gather info about the game and place it into a dict. This will be sent to
+    a player when they join the game.
+    '''
     def get_full_game_state(self):
         state = {
             'players': list(self.p_reg.id_map.values()),
@@ -327,6 +337,9 @@ class RedOrBlack:
         }
         return state
 
+    '''
+    Get the player who's turn it is
+    '''
     def get_current_player(self):
         if self.state != GameStates.PLAYING:
             return None

@@ -15,8 +15,7 @@ coloredlogs.install(logger=logger, level='DEBUG', fmt=fmt)
 
 logger.info('Starting server')
 server = WebsocketServer()
-# start_server = websockets.serve(server.handle_message, "localhost", 8080)
-start_server = websockets.serve(server.handle_message, "192.168.1.3", 8080)
+start_server = websockets.serve(server.handle_message, "0.0.0.0", 8080)
 
 
 asyncio.get_event_loop().run_until_complete(start_server)
