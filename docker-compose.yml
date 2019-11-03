@@ -1,0 +1,23 @@
+---
+
+version: '3'
+services:
+  websocketgameserver:
+    image: wbskt_games
+    restart: always
+    networks:
+      - games
+    ports: 
+      - 8080:8080
+
+  webserver:
+    image: wbskt_srvr
+    restart: always
+    networks:
+      - games
+    ports: 
+      - 80:80
+
+networks:
+  games:
+    driver: bridge
