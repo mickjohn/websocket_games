@@ -50,3 +50,9 @@ class PlayerRegistery():
 
     def get_order(self):
         return [p for p in list(self.id_map.values()) if p.active]
+
+    def all_inactive(self):
+        for (__id, player) in self.id_map.items():
+            if player.active == True:
+                return False
+        return True

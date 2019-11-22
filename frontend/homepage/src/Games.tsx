@@ -1,13 +1,14 @@
+import { Property } from "@babel/types";
 
 export class Game {
     path: string;
     displayName: string;
-    checksum: 0;
+    checksum: number;
 
     constructor(path: string, displayName: string, checksum: number) {
         this.path = path;
         this.displayName = displayName;
-        this.checksum = 0;
+        this.checksum = checksum;
     }
 
     public toString = (): string => {

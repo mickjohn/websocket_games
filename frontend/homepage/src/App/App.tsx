@@ -1,10 +1,12 @@
 import React from 'react';
 import * as resolver from '../resolver';
 import './App.css';
-import Game from '../Games';
+import Game, { games } from '../Games';
 
 import Spinner from '../Spinner/Spinner';
 import ErrorBox from '../ErrorBox/ErrorBox';
+import RedOrBlack from '../components/GameForms/red_or_black';
+import { jsxAttribute } from '@babel/types';
 
 // const websocketBaseUrl = 'ws://localhost:8080'
 const websocketBaseUrl = 'ws://192.168.1.3:8080'
@@ -19,6 +21,8 @@ interface State {
   error_msg: string;
   name_valid: boolean,
   code_entered: boolean,
+  show_create_game: boolean;
+  selected_game: string;
 }
 
 class VerifyResult {
@@ -45,6 +49,8 @@ class App extends React.Component<Props, State> {
       ws: null,
       name_valid: false,
       code_entered: false,
+      show_create_game: false,
+      selected_game: games[0].path,
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -182,6 +188,25 @@ class App extends React.Component<Props, State> {
     }, 1300); // End main timeout
   }
 
+  /* Connect to Websocket server and create a new game */
+  createNewGame(data: any) {
+    function sleep(time: number) {
+      return new Promise(resolve => {
+        setTimeout(resolve, time)
+      })
+    }
+
+    sleep(1).then(() => {
+      console.log('a')
+      return sleep(3);
+    }).then(() => {
+      console.log('b')
+      return sleep(6)
+    }).then(() => {
+      console.log('c')
+    })
+  }
+
   reset(): void {
     if (this.state.ws !== null) {
       this.state.ws.close();
@@ -217,22 +242,71 @@ class App extends React.Component<Props, State> {
     )
   }
 
-  render() {
-    let form: JSX.Element = this.buildForm();
+  gameSelectionChanged(e: React.FormEvent<HTMLSelectElement>) {
+    let newValue: string = e.currentTarget.value;
+    this.setState({ selected_game: newValue });
+  }
 
-    /* If the spinner is showing hide the form*/
-    if (this.state.checking_msg) {
-      form = <span></span>;
-    } else {
-      form = this.buildForm();
+  createGameWindow() {
+    const options = games.map((game) =>
+      <option value={game.path}>{game.displayName}</option>
+    );
+
+    let formElement: JSX.Element | null = null;
+    switch (this.state.selected_game) {
+      case "redorblack":
+        formElement = <RedOrBlack submitHandler={this.createNewGame}/>;
+        break;
+      default:
+        break;
     }
+
+    return (
+      <div>
+        <select onInput={this.gameSelectionChanged} name="game">
+          {options}
+        </select>
+
+        {formElement}
+
+        <button
+          className="CreateGameButton"
+          onClick={() => this.setState({ show_create_game: false })}
+        >
+          Go Back
+        </button>
+      </div>
+    )
+  }
+
+  createJoinDiv() {
+    const form: JSX.Element | null = this.state.checking_msg ? null : this.buildForm();
+    return (
+      <div>
+        <ErrorBox message={this.state.error_msg}></ErrorBox>
+        {form}
+        <Spinner message={this.state.checking_msg}></Spinner>
+        <h3>────────── OR ──────────</h3>
+
+        <button
+          className="CreateGameButton"
+          onClick={() => this.setState({ show_create_game: true })}
+        >
+          Create a game
+        </button>
+      </div>
+    );
+  }
+
+  render() {
+    const createGameWindow: JSX.Element | null = this.state.show_create_game ? this.createGameWindow() : null;
+    const joinDiv: JSX.Element | null = this.state.show_create_game ? null : this.createJoinDiv();
 
     return (
       <div className="App" >
         <header className="App-header"> games.mickjohn.com </header>
-        <ErrorBox message={this.state.error_msg}></ErrorBox>
-        {form}
-        <Spinner message={this.state.checking_msg}></Spinner>
+        {joinDiv}
+        {createGameWindow}
       </div >
     );
   }

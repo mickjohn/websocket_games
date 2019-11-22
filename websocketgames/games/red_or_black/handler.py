@@ -49,7 +49,7 @@ jsonpickle.handlers.registry.register(GameStates, JsonEnumHandler)
 
 class RedOrBlack:
 
-    def __init__(self, game_code, cleanup_handler=None):
+    def __init__(self, game_code, cleanup_handler=None, options=None):
         self.game_code = game_code
 
         self.p_reg = PlayerRegistery()
@@ -62,17 +62,38 @@ class RedOrBlack:
         self.penalty_increment = 1
         self.penalty_start = 1
         self.penalty = 1
+        self.shutting_down = False
         self.stats = {
             'outcomes': []
         }
 
         self.cleanup_handler = cleanup_handler
 
+        # Asyncio task for the cleanup callback
+        self.cleanup_task = None
+
         # Set of players that have disconnected
         self.inactive_player_ids = set()
 
         # Map of 'player id -> num of seconds inactive
         self.inactive_player_counter = defaultdict(int)
+
+        if options != None:
+            self._configure(options)
+
+    # def __del__(self):
+        # print(f"************* DELETING GAME {self.game_code}*************")
+
+    def _configure(self, options):
+        props = [
+            'penalty_start',
+            'penalty_increment',
+        ]
+        for prop in props:
+            if prop in options:
+                logger.debug(
+                    f"{self.game_code}: setting {prop} to {options[prop]}")
+                self.__setattr__(prop, options[prop])
 
     def __repr__(self):
         return (
@@ -88,6 +109,20 @@ class RedOrBlack:
 
     def _debug(self):
         logger.debug(self)
+
+    '''
+    Sleep for 30 seconds (in case someone joins), and then call the cleanup 
+    callback
+    '''
+    async def _cleanup(self):
+        await asyncio.sleep(30)
+        self.cleanup_handler(self.game_code)
+
+    async def start_cleanup_task(self):
+        logger.debug("running cleanup")
+        if self.cleanup_handler != None:
+            task = asyncio.create_task(self._cleanup())
+            self.cleanup_task = task
 
     async def handle_message(self, json_dict, websocket):
         if json_dict['type'] == 'Debug':
@@ -151,6 +186,11 @@ class RedOrBlack:
         player = self.p_reg.id_map[user_id]
         player.active = True
 
+        # If game was set to be removed, cancel the task
+        if self.cleanup_task != None:
+            logger.debug('cancelling cleanup')
+            self.cleanup_task.cancel()
+
         if self.owner == None:
             self.owner = player
 
@@ -191,6 +231,11 @@ class RedOrBlack:
         if client and client.player:
             player = client.player
             self.p_reg.deactivate(player)
+
+            if self.p_reg.all_inactive():
+                logger.debug("All players inactive, calling cleanup")
+                await self.start_cleanup_task()
+
             # self.inactive_player_ids.add(player.user_id)
             self.c_reg.remove(websocket)
             resp = []
@@ -326,6 +371,7 @@ class RedOrBlack:
     Gather info about the game and place it into a dict. This will be sent to
     a player when they join the game.
     '''
+
     def get_full_game_state(self):
         state = {
             'players': list(self.p_reg.id_map.values()),
@@ -340,6 +386,7 @@ class RedOrBlack:
     '''
     Get the player who's turn it is
     '''
+
     def get_current_player(self):
         if self.state != GameStates.PLAYING:
             return None

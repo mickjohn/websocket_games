@@ -27,12 +27,10 @@ class WebsocketServer():
             'RedOrBlack': RedOrBlack
         }
 
-    # async def cleanup_loop(self):
-    #     logger.info("Server cleanup loop starting")
-    #     while(True):
-    #         for handler in list(self.game_handlers.values()):
-    #             await handler.run_cleanup()
-    #         await asyncio.sleep(5)
+    def remove_game(self, game_id):
+        if game_id in self.games:
+            logger.info(f"removing game {game_id}")
+            del(self.games[game_id])
 
     async def handle_message(self, websocket, path):
         logger.debug(f'path = {path}')
@@ -66,13 +64,16 @@ class WebsocketServer():
         finally:
             if game_id in self.games:
                 await self.games[game_id].handle_close(websocket)
-            # await self.game_handlers[game_type].handle_close(websocket)
             logger.debug('Closing websocket connection')
 
     async def create_game(self, data, gametype, websocket):
         game_code = code_generator.generate_code(gametype)
         game = self.game_constructors[gametype]
-        self.games[game_code] = game(game_code)
+        self.games[game_code] = game(
+            game_code,
+            cleanup_handler=self.remove_game,
+            options=data.get('options', {})
+        )
         logger.info(f"Created new {gametype} game {game_code}")
         msg = {
             'type': 'GameCreated',
