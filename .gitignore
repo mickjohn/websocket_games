@@ -4,3 +4,6 @@ WebsocketGames.egg-info/
 .ropeproject/
 scratch.py
 .vscode/
+build
+wbskt_games.tar.zip
+wbskt_server.tar.zip

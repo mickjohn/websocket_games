@@ -1,6 +1,9 @@
 IMAGE_NAME = wbskt_games
 
-build: image server
+all: build-website image server
+
+build-website: build
+	./build
 
 build-image : 
 	sudo docker image rm $(IMAGE_NAME) || true && \
