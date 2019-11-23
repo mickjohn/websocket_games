@@ -49,7 +49,7 @@ jsonpickle.handlers.registry.register(GameStates, JsonEnumHandler)
 
 class RedOrBlack:
 
-    def __init__(self, game_code, cleanup_handler=None, options=None):
+    def __init__(self, game_code, cleanup_handler=None, options={}):
         self.game_code = game_code
 
         self.p_reg = PlayerRegistery()
@@ -59,9 +59,9 @@ class RedOrBlack:
         self.state = GameStates.LOBBY
         self.owner = None
         self.deck = Deck(shuffled=True)
-        self.penalty_increment = 1
-        self.penalty_start = 1
-        self.penalty = 1
+        self.penalty_increment = options.get('penalty_increment', 1)
+        self.penalty_start = options.get('penalty_start', 1)
+        self.penalty = options.get('penalty_start', 1)
         self.shutting_down = False
         self.stats = {
             'outcomes': []
@@ -77,23 +77,6 @@ class RedOrBlack:
 
         # Map of 'player id -> num of seconds inactive
         self.inactive_player_counter = defaultdict(int)
-
-        if options != None:
-            self._configure(options)
-
-    # def __del__(self):
-        # print(f"************* DELETING GAME {self.game_code}*************")
-
-    def _configure(self, options):
-        props = [
-            'penalty_start',
-            'penalty_increment',
-        ]
-        for prop in props:
-            if prop in options:
-                logger.debug(
-                    f"{self.game_code}: setting {prop} to {options[prop]}")
-                self.__setattr__(prop, options[prop])
 
     def __repr__(self):
         return (

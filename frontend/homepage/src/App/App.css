@@ -19,6 +19,14 @@
   margin: 10px;
   background-color: #ea4123;
   color: white;
+  cursor: pointer;
+}
+
+/* :disabled */
+
+.App input[type=submit]:disabled {
+  background-color: #9b9b9b;
+  cursor: default;
 }
 
 #gameCode {
@@ -53,4 +61,16 @@
   margin: 10px;
   background-color: #3ca660;
   color: white;
+  cursor: pointer;
+}
+
+.CancelButton {
+  font-size: 24px;
+  border-radius: 15px;
+  border: none;
+  padding: 10px;
+  margin: 10px;
+  background-color: #bb3535;
+  color: white;
+  cursor: pointer;
 }

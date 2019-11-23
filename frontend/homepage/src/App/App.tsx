@@ -3,10 +3,10 @@ import * as resolver from '../resolver';
 import './App.css';
 import Game, { games } from '../Games';
 
-import Spinner from '../Spinner/Spinner';
-import ErrorBox from '../ErrorBox/ErrorBox';
+import Spinner from '../components/Spinner/Spinner';
+import ErrorBox from '../components/ErrorBox/ErrorBox';
 import RedOrBlack from '../components/GameForms/red_or_black';
-import { jsxAttribute } from '@babel/types';
+import InfoBox from '../components/InfoBox/info_box';
 
 // const websocketBaseUrl = 'ws://localhost:8080'
 const websocketBaseUrl = 'ws://192.168.1.3:8080'
@@ -23,6 +23,9 @@ interface State {
   code_entered: boolean,
   show_create_game: boolean;
   selected_game: string;
+  creating_game_message: string | null;
+  info_box_message: string | null;
+  game_created: boolean;
 }
 
 class VerifyResult {
@@ -51,10 +54,14 @@ class App extends React.Component<Props, State> {
       code_entered: false,
       show_create_game: false,
       selected_game: games[0].path,
+      creating_game_message: null,
+      info_box_message: null,
+      game_created: false,
     };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.createNewGame = this.createNewGame.bind(this);
   }
 
   handleChange(event: React.FormEvent<HTMLInputElement>): void {
@@ -62,26 +69,18 @@ class App extends React.Component<Props, State> {
     const name: string = event.currentTarget.name;
 
     if (name === 'username') {
-      this.setState({ name_valid: this.validateName(value) });
-      this.setState({ username: value });
+      this.setState({ name_valid: this.validateName(value), username: value });
     } else {
-      this.setState({ code_entered: this.validateCode(value) });
-      this.setState({ gameCode: value });
+      this.setState({ code_entered: this.validateCode(value), gameCode: value });
     }
   }
 
   validateName(name: string): boolean {
-    if (name.length > 10) {
-      return false;
-    }
-    return true;
+    return name.length <= 10;
   }
 
   validateCode(code: string): boolean {
-    if (code.length === 4) {
-      return true;
-    }
-    return false;
+    return code.length === 4;
   }
 
   verifyGameCode(code: string): VerifyResult {
@@ -189,22 +188,50 @@ class App extends React.Component<Props, State> {
   }
 
   /* Connect to Websocket server and create a new game */
-  createNewGame(data: any) {
-    function sleep(time: number) {
-      return new Promise(resolve => {
-        setTimeout(resolve, time)
-      })
+  createNewGame(path: string, data: any) {
+    const websocketUrl = `${websocketBaseUrl}/${path}`;
+    console.info("websocket URL = " + websocketUrl);
+    const websocket: WebSocket = new WebSocket(websocketUrl);
+    this.setState({ creating_game_message: `Creating game...` });
+
+    // When the websocket opens send the create game message
+    websocket.onopen = () => {
+      websocket.send(JSON.stringify(data));
+    };
+
+    const wait_for_response_timeout = setTimeout(() => {
+      this.reset();
+      this.setState({ error_msg: "timeout waiting for server response" });
+    }, 5000);
+
+    // If the websocket is closed for some reason set an error msg and reset
+    websocket.onclose = () => {
+      console.log("WS connection closed");
+      this.reset();
+      this.setState({ error_msg: "cant connect to websocket server" });
     }
 
-    sleep(1).then(() => {
-      console.log('a')
-      return sleep(3);
-    }).then(() => {
-      console.log('b')
-      return sleep(6)
-    }).then(() => {
-      console.log('c')
-    })
+    websocket.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      console.debug(`msg from websocket = ${e.data}`);
+      clearTimeout(wait_for_response_timeout);
+      if (msg['type'] === 'GameCreated') {
+        const game_code = msg['game_code'];
+        this.setState({
+          gameCode: game_code,
+          info_box_message: `Game created! Code is ${game_code}`,
+          show_create_game: false,
+          code_entered: true,
+          game_created: true,
+        });
+      } else if (msg['type'] === 'Error') {
+        // Clear the onclose handler
+        websocket.onclose = () => { };
+        this.reset();
+        this.setState({ error_msg: msg['error'] });
+      }
+    };
+
   }
 
   reset(): void {
@@ -255,7 +282,7 @@ class App extends React.Component<Props, State> {
     let formElement: JSX.Element | null = null;
     switch (this.state.selected_game) {
       case "redorblack":
-        formElement = <RedOrBlack submitHandler={this.createNewGame}/>;
+        formElement = <RedOrBlack submitHandler={this.createNewGame} />;
         break;
       default:
         break;
@@ -270,30 +297,35 @@ class App extends React.Component<Props, State> {
         {formElement}
 
         <button
-          className="CreateGameButton"
+          className="CancelButton"
           onClick={() => this.setState({ show_create_game: false })}
         >
-          Go Back
+          cancel
         </button>
+
+        <h3>{this.state.creating_game_message}</h3>
       </div>
     )
   }
 
   createJoinDiv() {
     const form: JSX.Element | null = this.state.checking_msg ? null : this.buildForm();
+    const game_created = this.state.game_created;
+
     return (
       <div>
         <ErrorBox message={this.state.error_msg}></ErrorBox>
         {form}
         <Spinner message={this.state.checking_msg}></Spinner>
-        <h3>────────── OR ──────────</h3>
 
-        <button
+        {!game_created && <h3>────────── OR ──────────</h3>}
+
+        {!game_created && <button
           className="CreateGameButton"
           onClick={() => this.setState({ show_create_game: true })}
         >
           Create a game
-        </button>
+        </button>}
       </div>
     );
   }
@@ -302,9 +334,17 @@ class App extends React.Component<Props, State> {
     const createGameWindow: JSX.Element | null = this.state.show_create_game ? this.createGameWindow() : null;
     const joinDiv: JSX.Element | null = this.state.show_create_game ? null : this.createJoinDiv();
 
+    let infoBox: JSX.Element | null;
+    if (this.state.info_box_message === null) {
+      infoBox = null;
+    } else {
+      infoBox = <InfoBox message={this.state.info_box_message} />;
+    }
+
     return (
       <div className="App" >
         <header className="App-header"> games.mickjohn.com </header>
+        {infoBox}
         {joinDiv}
         {createGameWindow}
       </div >

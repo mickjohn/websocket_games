@@ -2,7 +2,7 @@ import React from 'react';
 import './game_forms.css';
 
 interface Props {
-    submitHandler: (data: any) => void;
+    submitHandler: (path: string, data: any) => void;
 };
 
 interface State {
@@ -20,7 +20,7 @@ class RedOrBlack extends React.Component<Props, State> {
         };
 
         this.handleChange = this.handleChange.bind(this);
-        // this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
     }
 
     handleChange(event: React.FormEvent<HTMLInputElement>): void {
@@ -34,26 +34,34 @@ class RedOrBlack extends React.Component<Props, State> {
         }
     }
 
-    handleSubmit() {
-        console.log("Submit clicked");
+    handleSubmit(e: React.FormEvent): void {
+        e.preventDefault();
+        const data = {
+            'type': 'CreateGame',
+            'options': {
+                'penalty_start': this.state.start_penalty,
+                'penalty_increment': this.state.penalty_increment,
+            }
+        };
+        this.props.submitHandler('RedOrBlack', data);
     }
 
     render() {
         return (
             <div>
-                <form className="GameSettings" onSubmit={this.props.submitHandler}>
+                <form className="GameSettings" onSubmit={this.handleSubmit}>
                     <h3>Settings for new Red Or Black game</h3>
                     <label htmlFor='start_penalty'><b>Starting Penalty</b></label>
                     <br />
-                    <input id="start_penalty" name="start_penalty" type="number" value={this.state.start_penalty} onChange={this.handleChange} />
+                    <input id="start_penalty" name="start_penalty" type="number" min="1" value={this.state.start_penalty} onChange={this.handleChange} />
                     <br />
 
                     <label htmlFor="penalty_increment"><b>Penalty Increment</b></label>
                     <br />
-                    <input id="penalty_increment" name="penalty_increment" type="number" value={this.state.penalty_increment} onChange={this.handleChange} />
+                    <input id="penalty_increment" name="penalty_increment" type="number" min="1" value={this.state.penalty_increment} onChange={this.handleChange} />
                     <br />
 
-                    <input type="submit" value="Submit" />
+                    <input type="submit" value="create" />
                 </form>
             </div >
         );

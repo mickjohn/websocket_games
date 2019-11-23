@@ -1,0 +1,18 @@
+.infobox {
+    background-color: #bdd9f1;
+    display: inline-block;
+    border: 2px solid #247ac6;
+    border-radius: 40px;
+    padding: 10px;
+    margin: 10px 0 10px 0;
+}
+
+/* .infobox-exclamation {
+    font-size: 60px;
+    font-weight: bold;
+} */
+
+.infobox-message {
+    font-size: 25px;
+    vertical-align: super;
+}

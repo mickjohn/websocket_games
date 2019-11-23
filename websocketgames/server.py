@@ -45,6 +45,7 @@ class WebsocketServer():
             async for message in websocket:
                 try:
                     data = json.loads(message)
+                    logger.debug(f"data = {data}")
                 except json.decoder.JSONDecodeError:
                     raise Exception('Invalid JSON')
 
