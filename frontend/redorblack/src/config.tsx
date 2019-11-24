@@ -8,7 +8,7 @@ class Config {
     }
 }
 
-export const config: Config = new Config('games.mickjohn.com:8080','localhost');
+export const config: Config = new Config('games.mickjohn.com:9000','localhost');
 // export const config: Config = new Config('localhost:8080','localhost');
 
 export default config;

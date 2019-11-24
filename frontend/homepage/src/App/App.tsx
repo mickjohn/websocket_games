@@ -9,7 +9,7 @@ import RedOrBlack from '../components/GameForms/red_or_black';
 import InfoBox from '../components/InfoBox/info_box';
 
 // const websocketBaseUrl = 'ws://localhost:8080'
-const websocketBaseUrl = 'wss://games.mickjohn.com:8080' // WEBSOCKET URL
+const websocketBaseUrl = 'wss://games.mickjohn.com:9000' // WEBSOCKET URL
 
 interface Props { };
 
