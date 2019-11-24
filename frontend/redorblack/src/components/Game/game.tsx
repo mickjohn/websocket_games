@@ -107,7 +107,7 @@ class Game extends React.Component<Props, State>   {
 
         this._ismounted = false;
         this._conn_status = "not connected";
-        let websocket: WebSocket = this.createWebsocket(`ws://${config.websocketUrl}/game_${params.game_id}`);
+        let websocket: WebSocket = this.createWebsocket(`wss://${config.websocketUrl}/game_${params.game_id}`);
         this.state = {
             websocketStatus: WebSocket.CLOSED,
             websocket: websocket,
