@@ -445,12 +445,12 @@ class Game extends React.Component<Props, State>   {
     }
 
     clearPenaltyHandler() {
-        window.navigator.vibrate(200);
+        window.navigator.vibrate(100);
         this.setState({ penalty: null });
     }
 
     clearCorrectCallback() {
-        window.navigator.vibrate(200);
+        window.navigator.vibrate(100);
         this.setState({ show_correct: false });
     }
 
