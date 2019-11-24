@@ -3,7 +3,7 @@ import config from '../../config';
 import Guess from '../../utils/guess';
 import UrlParams from '../../utils/url_params';
 import GameState from '../../utils/game_state';
-import './Game.css';
+import './game.css';
 import { GameHistory, GameHistoryItem } from '../../GameHistory';
 
 // Components:
