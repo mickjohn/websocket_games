@@ -8,15 +8,15 @@ services:
     networks:
       - games
     ports: 
-      - 8080:8080
+      - 9000:8080
 
   webserver:
-    image: wbskt_srvr
+    image: wbskt_server
     restart: always
     networks:
       - games
     ports: 
-      - 80:80
+      - 9080:80
 
 networks:
   games:
