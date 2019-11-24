@@ -48,6 +48,7 @@ class GameInfo extends React.Component<Props>   {
         }
 
         if (this.props.player !== undefined && currentPlayer.username === this.props.player.username) {
+            window.navigator.vibrate([200, 100, 200]);
             return (
                 <div>
                     <p><b>Current Player</b>: you!</p>
