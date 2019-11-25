@@ -6,6 +6,8 @@ interface Props {
     turn: number,
     order: Array<Player>,
     player: Player | undefined,
+    cards_left: number | null;
+    penalty: number | null;
 }
 
 
@@ -56,6 +58,7 @@ class GameInfo extends React.Component<Props>   {
             );
         }
 
+
         return (
             <div>
                 <p><b>Current Player</b>: {currentPlayer.username}</p>
@@ -65,7 +68,23 @@ class GameInfo extends React.Component<Props>   {
     }
 
     render() {
-        return this.createUpcomingPlayersBox();
+        let penaltyElem = null;
+        if (this.props.penalty !== null) {
+            penaltyElem = <span><b>Current Penalty:</b> {this.props.penalty}s </span>
+        }
+
+        let cardsLeft = null;
+        if (this.props.cards_left !== null) {
+            cardsLeft = <span><b>Cards Left:</b> {this.props.cards_left} </span>
+        }
+
+        return (
+            <div>
+                {this.createUpcomingPlayersBox()}
+                {penaltyElem}
+                {cardsLeft}
+            </div>
+        )
     }
 }
 

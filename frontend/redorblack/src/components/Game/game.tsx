@@ -69,6 +69,12 @@ interface State {
     // The penalty to drink
     penalty: number | null;
 
+    // The current penalty (for info)
+    current_penalty: number | null;
+
+    // The number of cards left in the deck
+    cards_left: number | null;
+
     // If true show 'your correct box'
     show_correct: boolean;
 
@@ -127,8 +133,10 @@ class Game extends React.Component<Props, State>   {
             url_params: params,
             turn: 0,
             penalty: null,
+            current_penalty: null,
             waiting_for_result: false,
             order: [],
+            cards_left: null,
         };
 
         websocket.onopen = () => {
@@ -298,8 +306,10 @@ class Game extends React.Component<Props, State>   {
                 turn: obj['turn'],
                 game_history: items,
                 penalty: penalty,
+                current_penalty: obj['new_penalty'],
                 show_correct: show_correct,
                 waiting_for_result: false,
+                cards_left: obj['cards_left'],
             });
 
         } else if (obj['type'] === 'Error') {
@@ -378,7 +388,7 @@ class Game extends React.Component<Props, State>   {
             stateElement = <p>Finished</p>;
         }
 
-        let lobby: JSX.Element;
+        let lobby: JSX.Element | null = null;
         if (this.state.game_state === GameState.Lobby && this.websocketIsConnected()) {
             lobby = (
                 <Lobby
@@ -388,8 +398,6 @@ class Game extends React.Component<Props, State>   {
                     onClick={this.state.start_game_handler}
                 />
             );
-        } else {
-            lobby = <span></span>;
         }
 
         return (
@@ -401,6 +409,8 @@ class Game extends React.Component<Props, State>   {
                         turn={this.state.turn}
                         order={this.state.order}
                         player={this.state.player}
+                        cards_left={this.state.cards_left}
+                        penalty={this.state.current_penalty}
                     />
                     <div className="InteractiveContent">
                         {stateElement}

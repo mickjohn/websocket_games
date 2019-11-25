@@ -15,7 +15,7 @@ class RedOrBlack extends React.Component<Props, State> {
     constructor(props: any) {
         super(props);
         this.state = {
-            start_penalty: 0,
+            start_penalty: 1,
             penalty_increment: 1,
         };
 
