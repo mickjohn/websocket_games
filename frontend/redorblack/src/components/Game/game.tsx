@@ -259,14 +259,20 @@ class Game extends React.Component<Props, State>   {
             /****************/
             const index: number = this.state.turn % this.state.order.length;
             const currentPlayer = this.state.order[index];
+            const nextIndex: number = this.state.turn + 1 % this.state.order.length;
+            const nextPlayer = this.state.order[nextIndex];
+
+            // If this player is up next, vibrate.
+            if (this.state.player !== undefined && this.state.player === nextPlayer) {
+                vibrate([50, 50, 50]);
+            }
+
             let show_correct: boolean = false;
             if (this.state.player !== undefined) {
                 if (this.state.player.username == currentPlayer.username) {
                     if (obj['correct'] === true) {
                         // Player is right!
                         show_correct = true;
-                    } else {
-                        // Player is wrong!
                     }
                 }
             }
@@ -446,12 +452,12 @@ class Game extends React.Component<Props, State>   {
     }
 
     clearPenaltyHandler() {
-        vibrate(100);
+        vibrate(40);
         this.setState({ penalty: null });
     }
 
     clearCorrectCallback() {
-        vibrate(100);
+        vibrate(40);
         this.setState({ show_correct: false });
     }
 

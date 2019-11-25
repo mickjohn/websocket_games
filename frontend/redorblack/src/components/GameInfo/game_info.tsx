@@ -1,7 +1,6 @@
 import React from 'react';
 import './game_info.css';
 import Player from '../../player';
-import vibrate from '../../utils/vibrate';
 
 interface Props {
     turn: number,
@@ -49,7 +48,6 @@ class GameInfo extends React.Component<Props>   {
         }
 
         if (this.props.player !== undefined && currentPlayer.username === this.props.player.username) {
-            vibrate([100, 50, 100]);
             return (
                 <div>
                     <p><b>Current Player</b>: you!</p>
