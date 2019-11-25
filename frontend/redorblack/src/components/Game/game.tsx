@@ -5,6 +5,7 @@ import UrlParams from '../../utils/url_params';
 import GameState from '../../utils/game_state';
 import './game.css';
 import { GameHistory, GameHistoryItem } from '../../GameHistory';
+import vibrate from '../../utils/vibrate';
 
 // Components:
 import ConnStatus from '../ConnStatus/conn_status';
@@ -445,12 +446,12 @@ class Game extends React.Component<Props, State>   {
     }
 
     clearPenaltyHandler() {
-        window.navigator.vibrate(100);
+        vibrate(100);
         this.setState({ penalty: null });
     }
 
     clearCorrectCallback() {
-        window.navigator.vibrate(100);
+        vibrate(100);
         this.setState({ show_correct: false });
     }
 
