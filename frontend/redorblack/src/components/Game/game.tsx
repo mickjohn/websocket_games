@@ -361,6 +361,8 @@ class Game extends React.Component<Props, State>   {
     }
 
     render() {
+        let isPlaying = this.state.game_state === GameState.Playing;
+        let isFinished = this.state.game_state === GameState.Playing;
         let stateElement: JSX.Element | null = null;
 
         if (this.state.game_state === GameState.NoState) {
@@ -406,6 +408,8 @@ class Game extends React.Component<Props, State>   {
                 turn={this.state.turn}
                 order={this.state.order}
                 player={this.state.player}
+                cards_left={this.state.cards_left}
+                penalty={this.state.current_penalty}
             />
         }
 
@@ -414,8 +418,9 @@ class Game extends React.Component<Props, State>   {
                 <header className="GameHeader">Red or Black</header>
                 <div className="GameScreen">
                     <ConnStatus status={this.state.websocketStatus} />
-                    {gameInfo}
-                    <div className="InteractiveContent">
+                    <h3>game id is {this.state.url_params.game_id}</h3>
+                    {isPlaying && gameInfo}
+                    {isPlaying && <div className="InteractiveContent">
                         {stateElement}
                         <PenaltyBox
                             penalty={this.state.penalty}
@@ -426,9 +431,9 @@ class Game extends React.Component<Props, State>   {
                             clearCorrectCallback={this.state.clearCorrectCallback}
                         />
                         <DotsThrobber show={this.state.waiting_for_result} />
-                        {lobby}
-                    </div>
-                    <HistoryBox game_history={this.state.game_history} />
+                    </div>}
+                    {!isPlaying && lobby}
+                    {isPlaying && <HistoryBox game_history={this.state.game_history} />}
                 </div>
             </div>
         );
