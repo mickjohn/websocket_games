@@ -3,8 +3,9 @@ import config from '../../config';
 import Guess from '../../utils/guess';
 import UrlParams from '../../utils/url_params';
 import GameState from '../../utils/game_state';
-import './Game.css';
+import './game.css';
 import { GameHistory, GameHistoryItem } from '../../GameHistory';
+import vibrate from '../../utils/vibrate';
 
 // Components:
 import ConnStatus from '../ConnStatus/conn_status';
@@ -68,6 +69,12 @@ interface State {
     // The penalty to drink
     penalty: number | null;
 
+    // The current penalty (for info)
+    current_penalty: number | null;
+
+    // The number of cards left in the deck
+    cards_left: number | null;
+
     // If true show 'your correct box'
     show_correct: boolean;
 
@@ -107,7 +114,7 @@ class Game extends React.Component<Props, State>   {
 
         this._ismounted = false;
         this._conn_status = "not connected";
-        let websocket: WebSocket = this.createWebsocket(`ws://${config.websocketUrl}/game_${params.game_id}`);
+        let websocket: WebSocket = this.createWebsocket(`${config.websocketUrl}/game_${params.game_id}`);
         this.state = {
             websocketStatus: WebSocket.CLOSED,
             websocket: websocket,
@@ -126,8 +133,10 @@ class Game extends React.Component<Props, State>   {
             url_params: params,
             turn: 0,
             penalty: null,
+            current_penalty: null,
             waiting_for_result: false,
             order: [],
+            cards_left: null,
         };
 
         websocket.onopen = () => {
@@ -258,14 +267,20 @@ class Game extends React.Component<Props, State>   {
             /****************/
             const index: number = this.state.turn % this.state.order.length;
             const currentPlayer = this.state.order[index];
+            const nextIndex: number = this.state.turn + 1 % this.state.order.length;
+            const nextPlayer = this.state.order[nextIndex];
+
+            // If this player is up next, vibrate.
+            if (this.state.player !== undefined && this.state.player === nextPlayer) {
+                vibrate([50, 50, 50]);
+            }
+
             let show_correct: boolean = false;
             if (this.state.player !== undefined) {
                 if (this.state.player.username == currentPlayer.username) {
                     if (obj['correct'] === true) {
                         // Player is right!
                         show_correct = true;
-                    } else {
-                        // Player is wrong!
                     }
                 }
             }
@@ -291,8 +306,10 @@ class Game extends React.Component<Props, State>   {
                 turn: obj['turn'],
                 game_history: items,
                 penalty: penalty,
+                current_penalty: obj['new_penalty'],
                 show_correct: show_correct,
                 waiting_for_result: false,
+                cards_left: obj['cards_left'],
             });
 
         } else if (obj['type'] === 'Error') {
@@ -371,7 +388,7 @@ class Game extends React.Component<Props, State>   {
             stateElement = <p>Finished</p>;
         }
 
-        let lobby: JSX.Element;
+        let lobby: JSX.Element | null = null;
         if (this.state.game_state === GameState.Lobby && this.websocketIsConnected()) {
             lobby = (
                 <Lobby
@@ -381,8 +398,6 @@ class Game extends React.Component<Props, State>   {
                     onClick={this.state.start_game_handler}
                 />
             );
-        } else {
-            lobby = <span></span>;
         }
 
         let gameInfo: JSX.Element | null = null;
@@ -450,10 +465,12 @@ class Game extends React.Component<Props, State>   {
     }
 
     clearPenaltyHandler() {
+        vibrate(40);
         this.setState({ penalty: null });
     }
 
     clearCorrectCallback() {
+        vibrate(40);
         this.setState({ show_correct: false });
     }
 

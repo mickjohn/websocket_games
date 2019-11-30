@@ -5,3 +5,6 @@ WebsocketGames.egg-info/
 scratch.py
 .vscode/
 .pytest_cache
+build
+wbskt_games.tar.zip
+wbskt_server.tar.zip

@@ -1,14 +1,14 @@
-FROM alpine:3.10
+# FROM alpine:3.10
+FROM python:3.7.5-alpine3.10
 
 COPY requirements.txt setup.py README.txt MANIFEST /
 COPY websocketgames /websocketgames
 COPY setup.py .
 
-RUN apk update \
-    && apk add python3 python3-dev gcc linux-headers  musl-dev --no-cache \
-    && pip3 install -r requirements.txt \
-    && pip3 install -e .
+    # && apk add python3 python3-dev gcc linux-headers  musl-dev --no-cache \
+RUN pip3 install --no-cache-dir -r requirements.txt \
+    && pip3 install --no-cache-dir -e .
 
 EXPOSE 8080
 
-CMD /usr/bin/python3 websocketgames/main.py
+CMD python websocketgames/main.py

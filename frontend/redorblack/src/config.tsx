@@ -8,7 +8,6 @@ class Config {
     }
 }
 
-export const config: Config = new Config('192.168.1.3:8080','localhost');
-// export const config: Config = new Config('localhost:8080','localhost');
+export const config: Config = new Config('wss://games.mickjohn.com:8010','games.mickjohn.com'); // CHANGEME #1
 
 export default config;
