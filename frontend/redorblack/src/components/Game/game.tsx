@@ -385,16 +385,21 @@ class Game extends React.Component<Props, State>   {
             lobby = <span></span>;
         }
 
+        let gameInfo: JSX.Element | null = null;
+        if (this.state.game_state === GameState.Playing) {
+            gameInfo = <GameInfo
+                turn={this.state.turn}
+                order={this.state.order}
+                player={this.state.player}
+            />
+        }
+
         return (
             <div>
                 <header className="GameHeader">Red or Black</header>
                 <div className="GameScreen">
                     <ConnStatus status={this.state.websocketStatus} />
-                    <GameInfo
-                        turn={this.state.turn}
-                        order={this.state.order}
-                        player={this.state.player}
-                    />
+                    {gameInfo}
                     <div className="InteractiveContent">
                         {stateElement}
                         <PenaltyBox
@@ -406,8 +411,8 @@ class Game extends React.Component<Props, State>   {
                             clearCorrectCallback={this.state.clearCorrectCallback}
                         />
                         <DotsThrobber show={this.state.waiting_for_result} />
+                        {lobby}
                     </div>
-                    {lobby}
                     <HistoryBox game_history={this.state.game_history} />
                 </div>
             </div>

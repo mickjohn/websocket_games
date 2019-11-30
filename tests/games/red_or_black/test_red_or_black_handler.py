@@ -58,6 +58,37 @@ def four_player_game_lobby():
 
 
 @fixture
+def outcomes():
+    '''
+    Return outcome of 10 turns with three players
+    Every card is Ace of Hearts
+    player 1: all RED and all CORRECT
+    player 2: one RED and ONE CORRECT
+    player 3: zero RED and zero CORRECT
+    '''
+    return [
+        {'player': {'username': 'mick', 'user_id': '123', 'active': True}, 'turn': 0,
+         'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 1},
+        {'player': {'username': 'john', 'user_id': '456', 'active': True}, 'turn': 1,
+         'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 2},
+        {'player': {'username': 'dracula', 'user_id': '789', 'active': True}, 'turn': 2,
+         'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 3},
+        {'player': {'username': 'mick', 'user_id': '123', 'active': True}, 'turn': 3,
+         'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 1},
+        {'player': {'username': 'john', 'user_id': '456', 'active': True}, 'turn': 4,
+         'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 2},
+        {'player': {'username': 'dracula', 'user_id': '789', 'active': True}, 'turn': 5,
+         'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 1},
+        {'player': {'username': 'mick', 'user_id': '123', 'active': True}, 'turn': 6,
+         'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 1},
+        {'player': {'username': 'john', 'user_id': '456', 'active': True}, 'turn': 7,
+         'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 2},
+        {'player': {'username': 'dracula', 'user_id': '789', 'active': True}, 'turn': 8,
+         'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 1}
+    ]
+
+
+@fixture
 def mock_utils_send(monkeypatch):
     class MockUtils():
         def __init__(self):
@@ -205,6 +236,7 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
     (p1, *_) = players
     # Set cards to something we know
     handler.state = GameStates.PLAYING
+    handler.turn_sleep_s = 0
     handler.deck.cards = [deck.Card('A', 'Clubs')] * 10
 
     # Guess correct answer
@@ -244,3 +276,61 @@ async def test_get_current_player(four_player_game_lobby):
     # p4 should be skipped because it's inactive
     handler.turn += 1
     assert handler.get_current_player() == p1
+
+
+def test_build_counters(outcomes, four_player_game_lobby):
+    (handler, _, _) = four_player_game_lobby
+    counters = handler._build_counters(outcomes)
+    print(counters)
+    assert counters['seconds_drank']['mick'] == 0
+    assert counters['seconds_drank']['dracula'] == 5
+    assert counters['correct_guesses']['mick'] == 3
+    assert counters['incorrect_guesses']['mick'] == 0
+    assert counters['incorrect_guesses']['dracula'] == 3
+    assert counters['red_guesses']['mick'] == 3
+    assert counters['red_guesses']['dracula'] == 0
+    assert counters['black_guesses']['dracula'] == 3
+
+
+def test_group_counter():
+    handler = RedOrBlack('AAAA')
+    counter = {
+        'mick': 4,
+        'john': 2,
+        'pat': 2,
+        'dracula': 0,
+    }
+
+    expected = {
+        1: (['mick'], 4),
+        2: (['john', 'pat'], 2),
+        4: (['dracula'], 0),
+    }
+    result = handler._group_counter(counter)
+    assert result == expected
+
+
+def test_group_counter_with_reverse():
+    handler = RedOrBlack('AAAA')
+    counter = {
+        'mick': 4,
+        'john': 2,
+        'pat': 2,
+        'dracula': 0,
+    }
+
+    expected = {
+        1: (['dracula'], 0),
+        2: (['john', 'pat'], 2),
+        4: (['mick'], 4),
+    }
+    result = handler._group_counter(counter, reverse=True)
+    print(result)
+    assert result == expected
+
+# def test_create_stats(outcomes, four_player_game_lobby):
+#     (handler, _, _) = four_player_game_lobby
+#     handler.stats['outcomes'] = outcomes
+#     result = handler.create_stats()
+#     print(result)
+#     assert(False)

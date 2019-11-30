@@ -52,9 +52,7 @@ def _generate_number(game):
 def _convert_to_code(code):
     temp_code = code
     converted_code = []
-    index = 1
     while(True):
-        index += 1
         mod = temp_code % _BASE
         converted_code.append(_DIGITS[mod])
         temp_code = temp_code // _BASE

@@ -4,3 +4,4 @@ WebsocketGames.egg-info/
 .ropeproject/
 scratch.py
 .vscode/
+.pytest_cache
