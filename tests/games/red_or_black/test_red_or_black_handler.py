@@ -67,23 +67,23 @@ def outcomes():
     player 3: zero RED and zero CORRECT
     '''
     return [
-        {'player': {'username': 'mick', 'user_id': '123', 'active': True}, 'turn': 0,
-         'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 1},
-        {'player': {'username': 'john', 'user_id': '456', 'active': True}, 'turn': 1,
+        {'player': Player('mick', '123'), 'turn': 0, 'guess': 'Red',
+         'correct': True, 'card': 'A of Hearts', 'penalty': 1},
+        {'player': Player('john', '456'), 'turn': 1,
          'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 2},
-        {'player': {'username': 'dracula', 'user_id': '789', 'active': True}, 'turn': 2,
+        {'player': Player('dracula', '789'), 'turn': 2,
          'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 3},
-        {'player': {'username': 'mick', 'user_id': '123', 'active': True}, 'turn': 3,
+        {'player': Player('mick', '123'), 'turn': 3,
          'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 1},
-        {'player': {'username': 'john', 'user_id': '456', 'active': True}, 'turn': 4,
+        {'player': Player('john', '456'), 'turn': 4,
          'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 2},
-        {'player': {'username': 'dracula', 'user_id': '789', 'active': True}, 'turn': 5,
+        {'player': Player('dracula', '789'), 'turn': 5,
          'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 1},
-        {'player': {'username': 'mick', 'user_id': '123', 'active': True}, 'turn': 6,
+        {'player': Player('mick', '123'), 'turn': 6,
          'guess': 'Red', 'correct': True, 'card': 'A of Hearts', 'penalty': 1},
-        {'player': {'username': 'john', 'user_id': '456', 'active': True}, 'turn': 7,
+        {'player': Player('john', '456'), 'turn': 7,
          'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 2},
-        {'player': {'username': 'dracula', 'user_id': '789', 'active': True}, 'turn': 8,
+        {'player': Player('dracula', '789'), 'turn': 8,
          'guess': 'Black', 'correct': False, 'card': 'A of Hearts', 'penalty': 1}
     ]
 
@@ -267,6 +267,7 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
 async def test_get_current_player(four_player_game_lobby):
     (handler, __websockets, players) = four_player_game_lobby
     (p1, p2, p3, __p4) = players
+
     handler.state = GameStates.PLAYING
     assert handler.get_current_player() == p1
     handler.turn += 1
@@ -281,7 +282,6 @@ async def test_get_current_player(four_player_game_lobby):
 def test_build_counters(outcomes, four_player_game_lobby):
     (handler, _, _) = four_player_game_lobby
     counters = handler._build_counters(outcomes)
-    print(counters)
     assert counters['seconds_drank']['mick'] == 0
     assert counters['seconds_drank']['dracula'] == 5
     assert counters['correct_guesses']['mick'] == 3

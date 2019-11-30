@@ -25,6 +25,7 @@
     margin: 5px;
     color: #fafaf8;
     width: 95px;
+    cursor: pointer;
 }
 
 .player-name {

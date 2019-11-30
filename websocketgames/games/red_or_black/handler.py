@@ -357,7 +357,8 @@ class RedOrBlack:
             self.state = GameStates.FINISHED
             await utils.broadcast_message(
                 self.c_reg.websockets(),
-                'GameFinished'
+                'GameFinished',
+                stats=self.create_stats(),
             )
 
     def get_full_game_state(self):
@@ -427,7 +428,7 @@ class RedOrBlack:
                 stats[stat_key][uname] = 0
 
         for outcome in outcomes:
-            uname = outcome['player']['username']
+            uname = outcome['player'].username
             if outcome['correct']:
                 stats['correct_guesses'][uname] += 1
             else:
@@ -454,6 +455,7 @@ class RedOrBlack:
         game_stats = {}
         # correct_counter, red_counter, black_counter, penalty_counter = self._build_counters()
         counters = self._build_counters(self.stats['outcomes'])
+
         game_stats = {
             'best_players': self._group_counter(counters['correct_guesses']),
             'worst_players': self._group_counter(counters['incorrect_guesses']),
