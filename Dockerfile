@@ -1,5 +1,5 @@
 # FROM alpine:3.10
-FROM python:3.7.5-alpine3.10
+FROM python:3.8-alpine3.10
 
 COPY requirements.txt setup.py README.txt MANIFEST /
 COPY websocketgames /websocketgames

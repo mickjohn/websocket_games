@@ -1,0 +1,6 @@
+frontend
+tests
+virtualenv
+websocketgames.egg-info
+client
+*.zip

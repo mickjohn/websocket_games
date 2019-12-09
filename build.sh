@@ -2,7 +2,7 @@
 set -e
 
 if [ ! -d "virtualenv" ];then
-  virtualenv -p python3.7 virtualenv
+  virtualenv -p python3.8 virtualenv
 fi
 
 source virtualenv/bin/activate
