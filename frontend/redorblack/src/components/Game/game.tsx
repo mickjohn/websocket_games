@@ -17,6 +17,7 @@ import PenaltyBox from '../PenaltyBox/penalty_box';
 import CorrectBox from '../CorrectBox/correct_box';
 import DotsThrobber from '../DotsThrobber/dots_throbber';
 import GameInfo from '../GameInfo/game_info';
+import GameOver from '../GameOver/game_over';
 
 
 function parseState(s: string) {
@@ -95,6 +96,9 @@ interface State {
 
     // Function to cleat the correct box.
     clearCorrectCallback: () => void;
+
+    // Stats
+    stats: any;
 }
 
 interface Props { }
@@ -137,6 +141,7 @@ class Game extends React.Component<Props, State>   {
             waiting_for_result: false,
             order: [],
             cards_left: null,
+            stats: {},
         };
 
         websocket.onopen = () => {
@@ -311,7 +316,11 @@ class Game extends React.Component<Props, State>   {
                 waiting_for_result: false,
                 cards_left: obj['cards_left'],
             });
-
+        } else if (obj['type'] === 'GameFinished') {
+            /************/
+            /* GameOver */
+            /************/
+            this.setState({ stats: obj['stats'], game_state: GameState.Finished });
         } else if (obj['type'] === 'Error') {
             /**********/
             /* Errors */
@@ -434,6 +443,7 @@ class Game extends React.Component<Props, State>   {
                     </div>}
                     {!isPlaying && lobby}
                     {isPlaying && <HistoryBox game_history={this.state.game_history} />}
+                    {isFinished && <GameOver stats={this.state.stats} />}
                 </div>
             </div>
         );
