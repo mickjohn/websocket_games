@@ -6,6 +6,7 @@ import GameState from '../../utils/game_state';
 import './game.css';
 import { GameHistory, GameHistoryItem } from '../../GameHistory';
 import vibrate from '../../utils/vibrate';
+import {Stats, parseStats} from '../GameOver/game_over';
 
 // Components:
 import ConnStatus from '../ConnStatus/conn_status';
@@ -98,7 +99,7 @@ interface State {
     clearCorrectCallback: () => void;
 
     // Stats
-    stats: any;
+    stats: Stats | null;
 }
 
 interface Props { }
@@ -141,7 +142,7 @@ class Game extends React.Component<Props, State>   {
             waiting_for_result: false,
             order: [],
             cards_left: null,
-            stats: {},
+            stats: null,
         };
 
         websocket.onopen = () => {
@@ -201,6 +202,11 @@ class Game extends React.Component<Props, State>   {
             const owner = new Player(gameState['owner']['username'], gameState['owner']['active']);
             const playersJson = gameState['players'];
             const history = gameState['shortend_history'];
+            let stats: Stats | null = null;
+            if (gameState === GameState.Finished) {
+                stats = parseStats(obj['stats']);
+            }
+
 
             const tempHist: GameHistory = this.state.game_history;
             for (let outcome of history) {
@@ -227,6 +233,7 @@ class Game extends React.Component<Props, State>   {
                 turn: gameState['turn'],
                 order: gameState['order'],
                 game_history: tempHist,
+                stats: stats,
             });
         } else if (obj['type'] === 'PlayerAdded') {
             /***************/
@@ -320,7 +327,8 @@ class Game extends React.Component<Props, State>   {
             /************/
             /* GameOver */
             /************/
-            this.setState({ stats: obj['stats'], game_state: GameState.Finished });
+            let parsed: any = parseStats(obj['stats']);
+            this.setState({ stats: parsed, game_state: GameState.Finished });
         } else if (obj['type'] === 'Error') {
             /**********/
             /* Errors */
@@ -371,7 +379,7 @@ class Game extends React.Component<Props, State>   {
 
     render() {
         let isPlaying = this.state.game_state === GameState.Playing;
-        let isFinished = this.state.game_state === GameState.Playing;
+        let isFinished = this.state.game_state === GameState.Finished;
         let stateElement: JSX.Element | null = null;
 
         if (this.state.game_state === GameState.NoState) {

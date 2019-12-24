@@ -60,6 +60,7 @@ class RedOrBlack:
         self.state = GameStates.LOBBY
         self.owner = None
         self.deck = Deck(shuffled=True)
+        self.deck.cards = self.deck.cards[0:options.get('number_of_cards', 52)]
         self.penalty_increment = options.get('penalty_increment', 1)
         self.penalty_start = options.get('penalty_start', 1)
         self.penalty = options.get('penalty_start', 1)
@@ -254,7 +255,7 @@ class RedOrBlack:
                     msg['type'],
                     **msg,
                 )
-        websocket.close()
+        await websocket.close()
 
     async def start_game(self, websocket, msg):
         '''
@@ -372,6 +373,7 @@ class RedOrBlack:
             'state': str(self.state),
             'owner': self.owner,
             'order': self.p_reg.get_order(),
+            'stats': self.create_stats(),
             'shortend_history': self.stats['outcomes'][0:10],
         }
         return state

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 '''
 Script to update the URLs in the frontend.

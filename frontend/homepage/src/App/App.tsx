@@ -173,7 +173,7 @@ class App extends React.Component<Props, State> {
                 const redirectUrl = `/${game.path}?game_id=${code}&uid=${user_id}`;
                 console.debug(`redirecting to ${redirectUrl}`);
                 window.location.href = redirectUrl;
-              }, 1500);
+              }, 800);
 
             } else if (msg['type'] === 'Error') {
               // Clear the onclose handler
@@ -183,8 +183,8 @@ class App extends React.Component<Props, State> {
             }
           };
         } // End check game !== null if
-      }, 1300); // End websocket timeout
-    }, 1300); // End main timeout
+      }, 800); // End websocket timeout
+    }, 800); // End main timeout
   }
 
   /* Connect to Websocket server and create a new game */

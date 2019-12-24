@@ -8,6 +8,7 @@ interface Props {
 interface State {
     start_penalty: number;
     penalty_increment: number;
+    number_of_cards: number;
 };
 
 class RedOrBlack extends React.Component<Props, State> {
@@ -17,6 +18,7 @@ class RedOrBlack extends React.Component<Props, State> {
         this.state = {
             start_penalty: 1,
             penalty_increment: 1,
+            number_of_cards: 52,
         };
 
         this.handleChange = this.handleChange.bind(this);
@@ -29,6 +31,8 @@ class RedOrBlack extends React.Component<Props, State> {
 
         if (name === 'start_penalty') {
             this.setState({ start_penalty: parseInt(value) });
+        } else if (name === 'number_of_cards') {
+            this.setState({ number_of_cards: parseInt(value) });
         } else if (name === 'penalty_increment') {
             this.setState({ penalty_increment: parseInt(value) });
         }
@@ -41,6 +45,7 @@ class RedOrBlack extends React.Component<Props, State> {
             'options': {
                 'penalty_start': this.state.start_penalty,
                 'penalty_increment': this.state.penalty_increment,
+                'number_of_cards': this.state.number_of_cards,
             }
         };
         this.props.submitHandler('RedOrBlack', data);
@@ -59,6 +64,11 @@ class RedOrBlack extends React.Component<Props, State> {
                     <label htmlFor="penalty_increment"><b>Penalty Increment</b></label>
                     <br />
                     <input id="penalty_increment" name="penalty_increment" type="number" min="1" value={this.state.penalty_increment} onChange={this.handleChange} />
+                    <br />
+
+                    <label htmlFor="number_of_cards"><b>Number of Cards (1-52)</b></label>
+                    <br />
+                    <input id="number_of_cards" name="number_of_cards" type="number" min="1" max="52" value={this.state.number_of_cards} onChange={this.handleChange} />
                     <br />
 
                     <input type="submit" value="create" />
