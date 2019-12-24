@@ -257,12 +257,12 @@ class App extends React.Component<Props, State> {
       <form onSubmit={this.handleSubmit}>
         <label className="App-label" htmlFor='username'><b>YOUR NAME</b></label>
         <br />
-        <input id="username" name="username" minLength={4} maxLength={18} size={16} type="text" value={this.state.username} onChange={this.handleChange} />
+        <input id="username" name="username" autoComplete="off" minLength={4} maxLength={18} size={16} type="text" value={this.state.username} onChange={this.handleChange} />
         <br />
 
         <label className="App-label" htmlFor="gameCode"><b>GAME CODE</b></label>
         <br />
-        <input id="gameCode" name="gameCode" minLength={4} maxLength={4} size={16} type="text" value={this.state.gameCode} onChange={this.handleChange} />
+        <input id="gameCode" name="gameCode" autoComplete="off" minLength={4} maxLength={4} size={16} type="text" value={this.state.gameCode} onChange={this.handleChange} />
         <br />
         {button}
       </form>
