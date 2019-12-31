@@ -32,8 +32,7 @@ class HistoryBox extends React.Component<Props>   {
         let outcomeClass = outcome ? 'good-outcome' : 'bad-outcome';
         return (
             <td>
-                {outcome ? 'Correct!' : 'Wrong!'}
-                <span className={outcomeClass}>{outcome ? '✔' : '✗'}</span>
+                <span className={outcomeClass}>{outcome ? 'Correct!' : 'Wrong!'}</span>
             </td>
         );
     }
@@ -44,6 +43,7 @@ class HistoryBox extends React.Component<Props>   {
 
         this.props.game_history.items().forEach(item => {
             listItems.push(<tr>
+                {/* <td>{item.turn}</td> */}
                 {this.createNameData(item.username)}
                 {this.createGuessData(item.guess)}
                 {this.createOutcomeData(item.correct)}
@@ -63,6 +63,7 @@ class HistoryBox extends React.Component<Props>   {
             <div className="HistoryBox">
                 <table>
                     <tr>
+                        {/* <th>turn</th> */}
                         <th>username</th>
                         <th>guess</th>
                         <th>outcome</th>

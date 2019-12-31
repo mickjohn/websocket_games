@@ -54,7 +54,7 @@ class WebsocketServer():
                 else:
                     if game_id not in self.games:
                         await game_not_found(game_id, websocket)
-                        websocket.close()
+                        await websocket.close()
                     else:
                         game = self.games[game_id]
                         await game.handle_message(data, websocket)

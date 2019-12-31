@@ -126,7 +126,7 @@ class Game extends React.Component<Props, State>   {
             user_id: params.user_id,
             game_id: params.game_id,
             players: new Map(),
-            game_history: new GameHistory(5),
+            game_history: new GameHistory(),
             player: undefined,
             show_correct: false,
             owner: undefined,
@@ -201,7 +201,7 @@ class Game extends React.Component<Props, State>   {
             const player = new Player(obj['player']['username'], obj['player']['active']);
             const owner = new Player(gameState['owner']['username'], gameState['owner']['active']);
             const playersJson = gameState['players'];
-            const history = gameState['shortend_history'];
+            const history = gameState['history'];
             let stats: Stats | null = null;
             if (gameState === GameState.Finished) {
                 stats = parseStats(obj['stats']);
@@ -214,7 +214,8 @@ class Game extends React.Component<Props, State>   {
                     outcome['player']['username'],
                     outcome['guess'],
                     outcome['correct'],
-                    outcome['penalty']
+                    outcome['penalty'],
+                    outcome['turn'],
                 );
                 tempHist.addItem(histItem);
             }
@@ -301,7 +302,8 @@ class Game extends React.Component<Props, State>   {
                 obj['player']['username'],
                 obj['guess'],
                 obj['correct'],
-                obj['penalty']
+                obj['penalty'],
+                obj['turn']
             );
 
             const items = this.state.game_history;

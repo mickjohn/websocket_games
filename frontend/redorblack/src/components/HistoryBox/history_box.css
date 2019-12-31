@@ -1,3 +1,10 @@
+.HistoryBox {
+    margin: 5px;
+    border: 2px solid #505759;
+    overflow: auto;
+    height: 300px;
+}
+
 .HistoryBox table {
     width: 100%;
     border-collapse: collapse;
@@ -11,13 +18,7 @@
     border: none;
 }
 
-.HistoryBox tr:nth-child(6) {
-    border: none;
-    opacity: 0.3;
-}
-
 .username {
-    /* text-align: left; */
     padding: 10px;
 }
 
@@ -41,7 +42,7 @@
 }
 
 .bad-outcome {
-    color: red;
+    color: #f84445;
     font-weight: bold;
 }
 

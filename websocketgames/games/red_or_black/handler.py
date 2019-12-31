@@ -374,7 +374,7 @@ class RedOrBlack:
             'owner': self.owner,
             'order': self.p_reg.get_order(),
             'stats': self.create_stats(),
-            'shortend_history': self.stats['outcomes'][0:10],
+            'history': self.stats['outcomes'],
         }
         return state
 

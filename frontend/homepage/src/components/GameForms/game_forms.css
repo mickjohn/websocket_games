@@ -1,0 +1,21 @@
+.GameSettings {
+    width: 340px;
+    margin: 0 auto;
+}
+
+.GameSettings label {
+    text-align: left;
+    width: 200px;
+    display: inline-block;
+}
+
+.GameSettings input[type=number] {
+    text-align: left;
+    width: 40px;
+    display: inline-block;
+    font-size: 15px;
+}
+
+.GameSettings > div {
+    margin-bottom: 5px;
+}

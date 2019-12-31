@@ -56,20 +56,21 @@ class RedOrBlack extends React.Component<Props, State> {
             <div>
                 <form className="GameSettings" onSubmit={this.handleSubmit}>
                     <h3>Settings for new Red Or Black game</h3>
-                    <label htmlFor='start_penalty'><b>Starting Penalty</b></label>
-                    <br />
-                    <input id="start_penalty" name="start_penalty" type="number" min="1" value={this.state.start_penalty} onChange={this.handleChange} />
-                    <br />
 
-                    <label htmlFor="penalty_increment"><b>Penalty Increment</b></label>
-                    <br />
-                    <input id="penalty_increment" name="penalty_increment" type="number" min="1" value={this.state.penalty_increment} onChange={this.handleChange} />
-                    <br />
+                    <div>
+                        <label htmlFor='start_penalty'><b>Starting Penalty</b></label>
+                        <input id="start_penalty" name="start_penalty" type="number" min="1" value={this.state.start_penalty} onChange={this.handleChange} />
+                    </div>
 
-                    <label htmlFor="number_of_cards"><b>Number of Cards (1-52)</b></label>
-                    <br />
-                    <input id="number_of_cards" name="number_of_cards" type="number" min="1" max="52" value={this.state.number_of_cards} onChange={this.handleChange} />
-                    <br />
+                    <div>
+                        <label htmlFor="penalty_increment"><b>Penalty Increment</b></label>
+                        <input id="penalty_increment" name="penalty_increment" type="number" min="1" value={this.state.penalty_increment} onChange={this.handleChange} />
+                    </div>
+
+                    <div>
+                        <label htmlFor="number_of_cards"><b>Number of Cards (1-52)</b></label>
+                        <input id="number_of_cards" name="number_of_cards" type="number" min="1" max="52" value={this.state.number_of_cards} onChange={this.handleChange} />
+                    </div>
 
                     <input type="submit" value="create" />
                 </form>
