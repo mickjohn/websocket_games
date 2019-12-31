@@ -90,6 +90,7 @@ class RedOrBlack:
             f"[{self.game_code}]: cards left: {len(self.deck.cards)}\n"
             f"[{self.game_code}]: player registery: {self.p_reg}\n"
             f"[{self.game_code}]: client registery: {self.c_reg}\n"
+            f"[{self.game_code}]: history: {self.get_full_game_state()}\n"
         )
 
     def _debug(self):
@@ -333,8 +334,7 @@ class RedOrBlack:
             'correct': correct,
             'card': card,
             'penalty': return_penalty,
-        })
-        self.turn += 1
+        })       
 
         if correct:
             self.penalty += self.penalty_increment
@@ -352,6 +352,8 @@ class RedOrBlack:
             player=player,
             cards_left=len(self.deck.cards),
         )
+
+        self.turn += 1
 
         if len(self.deck.cards) == 0:
             logger.info(f"{self.game_code}: Deck empty, finishing game")

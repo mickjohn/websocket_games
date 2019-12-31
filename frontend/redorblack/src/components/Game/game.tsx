@@ -316,8 +316,11 @@ class Game extends React.Component<Props, State>   {
                 penalty = this.getPenaltyForThisPlayer();
             }
 
+            // The 'turn' number in the message is the turn just played, so add
+            // 1 to it to get the current turn.
+            const currentTurn = obj['turn'] + 1;
             this.setState({
-                turn: obj['turn'],
+                turn: currentTurn,
                 game_history: items,
                 penalty: penalty,
                 current_penalty: obj['new_penalty'],

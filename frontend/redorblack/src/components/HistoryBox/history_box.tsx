@@ -43,7 +43,7 @@ class HistoryBox extends React.Component<Props>   {
 
         this.props.game_history.items().forEach(item => {
             listItems.push(<tr>
-                {/* <td>{item.turn}</td> */}
+                <td>{item.turn + 1}</td>
                 {this.createNameData(item.username)}
                 {this.createGuessData(item.guess)}
                 {this.createOutcomeData(item.correct)}
@@ -63,7 +63,7 @@ class HistoryBox extends React.Component<Props>   {
             <div className="HistoryBox">
                 <table>
                     <tr>
-                        {/* <th>turn</th> */}
+                        <th>turn</th>
                         <th>username</th>
                         <th>guess</th>
                         <th>outcome</th>
