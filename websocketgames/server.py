@@ -5,6 +5,7 @@ import jsonpickle
 
 # from websocketgames.games.red_or_black.handler import RedOrBlack
 from websocketgames.games.red_or_black.handler import RedOrBlack
+from websocketgames.games.high_or_low import HighOrLow
 from websocketgames import code_generator
 
 logger = logging.getLogger('websocketgames')
@@ -24,7 +25,8 @@ class WebsocketServer():
     def __init__(self):
         self.games = {}
         self.game_constructors = {
-            'RedOrBlack': RedOrBlack
+            'RedOrBlack': RedOrBlack,
+            'HighOrLow': HighOrLow,
         }
 
     def remove_game(self, game_id):

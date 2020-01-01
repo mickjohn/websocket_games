@@ -4,11 +4,11 @@ import asyncio
 from enum import auto, Enum
 
 from websocketgames.deck import Deck
-from websocketgames.games.red_or_black import validator
-from websocketgames.games.red_or_black import utils
+from websocketgames.games.high_or_low import validator
+from websocketgames.games.high_or_low import utils
 from websocketgames.games.errors import *
-from websocketgames.games.clients import Client, ClientRegistery
-from websocketgames.games.players import Player, PlayerRegistery
+from websocketgames.games.high_or_low.clients import Client, ClientRegistery
+from websocketgames.games.high_or_low.players import Player, PlayerRegistery
 
 from collections import defaultdict
 import uuid
@@ -47,7 +47,7 @@ class GameStates(Enum):
 jsonpickle.handlers.registry.register(GameStates, JsonEnumHandler)
 
 
-class RedOrBlack:
+class HighOrLow:
 
     def __init__(self, game_code, cleanup_handler=None, options={}):
         self.game_code = game_code
@@ -61,6 +61,7 @@ class RedOrBlack:
         self.owner = None
         self.deck = Deck(shuffled=True)
         self.deck.cards = self.deck.cards[0:options.get('number_of_cards', 52)]
+        self.current_car = self.deck.cards.pop()
         self.penalty_increment = options.get('penalty_increment', 1)
         self.penalty_start = options.get('penalty_start', 1)
         self.penalty = options.get('penalty_start', 1)

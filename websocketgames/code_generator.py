@@ -31,7 +31,8 @@ _HIGHER_BOUND = _MAX_CODE - _MODULUS + 1
 # This cannot be dynamically created. The client will need to know this modulus
 # table
 GAME_MODULUS_TABLE = {
-    'RedOrBlack': 0
+    'RedOrBlack': 0,
+    'HighOrLow': 1,
 }
 
 

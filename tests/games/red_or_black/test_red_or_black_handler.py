@@ -1,5 +1,5 @@
 from websocketgames.games.red_or_black.handler import RedOrBlack, Client, GameStates
-from websocketgames.games.red_or_black.players import Player
+from websocketgames.games.players import Player
 from websocketgames.games.red_or_black import utils
 from websocketgames import code_generator, deck
 import pytest
@@ -22,7 +22,7 @@ class MockWebsocket():
         else:
             self.message_stack.append(s)
 
-    def close(self):
+    async def close(self):
         self.open = False
 
 
@@ -248,7 +248,7 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
             'type': 'GuessOutcome',
             'guess': 'Black',
             'cards_left': 9,
-            'turn': 1,
+            'turn': 0,
             'correct': True,
             'penalty': handler.penalty_start,
             'new_penalty': handler.penalty,
