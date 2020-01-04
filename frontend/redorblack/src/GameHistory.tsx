@@ -38,6 +38,10 @@ export class GameHistory {
         this._historyItems.unshift(item);
     }
 
+    addItems(items: GameHistoryItem[]) {
+        this._historyItems.concat(items);
+    }
+
     items() {
         return this._historyItems;
     }

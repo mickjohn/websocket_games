@@ -4,9 +4,11 @@ import Guess from '../../utils/guess';
 import UrlParams from '../../utils/url_params';
 import GameState from '../../utils/game_state';
 import './game.css';
-import { GameHistory, GameHistoryItem } from '../../GameHistory';
+import { GameHistory } from '../../GameHistory';
 import vibrate from '../../utils/vibrate';
-import {Stats, parseStats} from '../GameOver/game_over';
+import { Stats, parseStats } from '../GameOver/game_over';
+import parseJsonMessage from '../../messages/parser';
+import * as messages from '../../messages/parser';
 
 // Components:
 import ConnStatus from '../ConnStatus/conn_status';
@@ -21,7 +23,7 @@ import GameInfo from '../GameInfo/game_info';
 import GameOver from '../GameOver/game_over';
 
 
-function parseState(s: string) {
+function parseState(s: string): GameState {
     console.debug(`state = ${s}`);
     if (s === 'PLAYING') {
         return GameState.Playing;
@@ -84,7 +86,8 @@ interface State {
     waiting_for_result: boolean;
 
     // Array of players in order of thier turn
-    order: Array<Player>;
+    // order: Array<Player>;
+    order: Player[];
 
     // What to do when start game clicked
     start_game_handler: (event: any) => void;
@@ -184,6 +187,40 @@ class Game extends React.Component<Props, State>   {
         this._ismounted = false;
     }
 
+    getCurrentPlayer(): Player | null {
+        if (this.state.order.length > 0) {
+            const index: number = this.state.turn % this.state.order.length;
+            const currentPlayer: Player = this.state.order[index];
+            return currentPlayer;
+        }
+        return null;
+    }
+
+    getNextPlayer(): Player | null {
+        if (this.state.order.length > 0) {
+            const nextIndex: number = this.state.turn + 1 % this.state.order.length;
+            const nextPlayer: Player = this.state.order[nextIndex];
+            return nextPlayer
+        }
+        return null;
+    }
+
+    isPlayersGo(): boolean {
+        const currentPlayer = this.getCurrentPlayer();
+        if (currentPlayer !== null) {
+            return this.state.player !== undefined && this.state.player.username === currentPlayer.username;
+        }
+        return false;
+    }
+
+    goingNext(): boolean {
+        const nextPlayer: Player | null = this.getNextPlayer();
+        if (nextPlayer !== null) {
+            return this.state.player !== undefined && this.state.player === nextPlayer;
+        }
+        return false;
+    }
+
     handleMessage(msg: any): void {
         let obj = JSON.parse(msg);
         console.debug(obj);
@@ -192,122 +229,74 @@ class Game extends React.Component<Props, State>   {
             return;
         }
 
-        if (obj['type'] === 'YouJoined') {
+        let parsed_message: messages.Message | null = parseJsonMessage(obj);
+        if (parsed_message === null) {
+            return;
+        }
+
+
+        if (parsed_message instanceof messages.YouJoined) {
             /*************/
             /* YouJoined */
             /*************/
-            console.debug("You have joined the game");
-            const gameState = obj['game_state'];
-            const player = new Player(obj['player']['username'], obj['player']['active']);
-            const owner = new Player(gameState['owner']['username'], gameState['owner']['active']);
-            const playersJson = gameState['players'];
-            const history = gameState['history'];
-            let stats: Stats | null = null;
-            if (gameState === GameState.Finished) {
-                stats = parseStats(obj['stats']);
-            }
-
-
-            const tempHist: GameHistory = this.state.game_history;
-            for (let outcome of history) {
-                const histItem: GameHistoryItem = new GameHistoryItem(
-                    outcome['player']['username'],
-                    outcome['guess'],
-                    outcome['correct'],
-                    outcome['penalty'],
-                    outcome['turn'],
-                );
-                tempHist.addItem(histItem);
-            }
-
-            const players: Map<string, Player> = new Map();
-            for (let pj of playersJson) {
-                let newPlayer = new Player(pj['username'], pj['active']);
-                players.set(newPlayer.username, newPlayer);
-            }
-
             this.setState({
-                player: player,
-                owner: owner,
-                players: players,
-                game_state: parseState(gameState['state']),
-                turn: gameState['turn'],
-                order: gameState['order'],
-                game_history: tempHist,
-                stats: stats,
+                player: parsed_message.player,
+                owner: parsed_message.owner,
+                players: parsed_message.players,
+                game_state: parsed_message.state,
+                turn: parsed_message.turn,
+                order: parsed_message.order,
+                game_history: parsed_message.history,
+                stats: parsed_message.stats,
             });
-        } else if (obj['type'] === 'PlayerAdded') {
+        } else if (parsed_message instanceof messages.PlayerAdded) {
             /***************/
             /* PlayerAdded */
             /***************/
-            console.debug("Adding new player");
-            const new_player = new Player(obj['player']['username'], obj['player']['active']);
             const map = this.state.players;
-            map.set(new_player.username, new_player);
+            map.set(parsed_message.player.username, parsed_message.player);
             this.setState({ players: map });
-        } else if (obj['type'] === 'PlayerDisconnected') {
+        } else if (parsed_message instanceof messages.PlayerDisconnected) {
             /**********************/
             /* PlayerDisconnected */
             /**********************/
-            console.debug('Player disconnected');
-            const username = obj['player']['username'];
             const map = this.state.players;
-            map.delete(username);
+            map.delete(parsed_message.player.username);
             this.setState({ players: map });
-        } else if (obj['type'] === 'GameStarted') {
+        } else if (parsed_message instanceof messages.GameStarted) {
             /***************/
             /* GameStarted */
             /***************/
             console.debug('game starting');
             this.setState({ game_state: GameState.Playing })
-        } else if (obj['type'] === 'NewOwner') {
+        } else if (parsed_message instanceof messages.NewOwner) {
             /************/
             /* NewOwner */
             /************/
             console.info('NewOwner: Updating Owner');
-            const owner = new Player(obj['owner']['username'], obj['owner']['active'])
-            this.setState({ owner: owner });
-        } else if (obj['type'] === 'OrderChanged') {
+            this.setState({ owner: parsed_message.owner });
+        } else if (parsed_message instanceof messages.OrderChanged) {
             /****************/
             /* OrderChanged */
             /****************/
             console.info("OrderChanged: updating order");
-            const order = obj['order'];
-            this.setState({ order: order });
-        } else if (obj['type'] === 'GuessOutcome') {
+            this.setState({ order: parsed_message.order });
+            // } else if (obj['type'] === 'GuessOutcome') {
+        } else if (parsed_message instanceof messages.GuessOutcome) {
             /****************/
             /* GuessOutcome */
             /****************/
-            const index: number = this.state.turn % this.state.order.length;
-            const currentPlayer = this.state.order[index];
-            const nextIndex: number = this.state.turn + 1 % this.state.order.length;
-            const nextPlayer = this.state.order[nextIndex];
+            console.debug("It's a guess outcome");
+            const show_correct: boolean = this.isPlayersGo() && parsed_message.correct;
 
             // If this player is up next, vibrate.
-            if (this.state.player !== undefined && this.state.player === nextPlayer) {
+            if (this.goingNext()) {
                 vibrate([50, 50, 50]);
             }
 
-            let show_correct: boolean = false;
-            if (this.state.player !== undefined) {
-                if (this.state.player.username == currentPlayer.username) {
-                    if (obj['correct'] === true) {
-                        // Player is right!
-                        show_correct = true;
-                    }
-                }
-            }
-
-            const item = new GameHistoryItem(
-                obj['player']['username'],
-                obj['guess'],
-                obj['correct'],
-                obj['penalty'],
-                obj['turn']
-            );
-
             const items = this.state.game_history;
-            items.addItem(item);
+            items.addItem(parsed_message.createGameHistoryItem());
+
             // Update the turn number and history
             // Don't accidently clear the penalty
             let penalty: number | null = this.state.penalty;
@@ -318,34 +307,33 @@ class Game extends React.Component<Props, State>   {
 
             // The 'turn' number in the message is the turn just played, so add
             // 1 to it to get the current turn.
-            const currentTurn = obj['turn'] + 1;
+            const currentTurn = parsed_message.turn + 1;
             this.setState({
                 turn: currentTurn,
                 game_history: items,
                 penalty: penalty,
-                current_penalty: obj['new_penalty'],
+                current_penalty: parsed_message.newPenalty,
                 show_correct: show_correct,
                 waiting_for_result: false,
-                cards_left: obj['cards_left'],
+                cards_left: parsed_message.cardsLeft,
             });
-        } else if (obj['type'] === 'GameFinished') {
+        } else if (parsed_message instanceof messages.GameOver) {
             /************/
             /* GameOver */
             /************/
-            let parsed: any = parseStats(obj['stats']);
-            this.setState({ stats: parsed, game_state: GameState.Finished });
-        } else if (obj['type'] === 'Error') {
+            this.setState({ stats: parsed_message.stats, game_state: GameState.Finished });
+        } else if (parsed_message instanceof messages.ErrorMessage) {
             /**********/
             /* Errors */
             /**********/
-            if (obj['error_type'] === 'GameNotFound') {
+            if (parsed_message.errorType === 'GameNotFound') {
                 this.redirect();
             }
-
         } else {
             console.warn(`Unidentifed message type '${obj['type']}'`);
         }
     }
+
 
     createWebsocket(url: string): WebSocket {
         console.info("Creating websocket connection");
@@ -510,3 +498,4 @@ class Game extends React.Component<Props, State>   {
 
 
 export default Game;
+export { parseState };
