@@ -1,14 +1,15 @@
 import jsonpickle
 import logging
 import asyncio
-from enum import auto, Enum
+
 
 from websocketgames.deck import Deck
 from websocketgames.games.red_or_black import validator
 from websocketgames.games.red_or_black import utils
-from websocketgames.games.errors import *
 from websocketgames.games.clients import Client, ClientRegistery
 from websocketgames.games.players import Player, PlayerRegistery
+from websocketgames.games.red_or_black.states import GameStates
+from websocketgames.games.red_or_black.stats import Outcome, Stats
 
 from collections import defaultdict
 import uuid
@@ -16,47 +17,15 @@ import uuid
 logger = logging.getLogger('websocketgames')
 
 
-class JsonEnumHandler(jsonpickle.handlers.BaseHandler):
-
-    def restore(self, obj):
-        pass
-
-    def flatten(self, obj: Enum, data):
-        return obj.name
-
-
-class GameStates(Enum):
-    LOBBY = auto()
-    PLAYING = auto()
-    FINISHED = auto()
-
-    def __str__(self):
-        if self == self.LOBBY:
-            return 'LOBBY'
-        elif self == self.PLAYING:
-            return 'PLAYING'
-        elif self.FINISHED:
-            return 'FINISHED'
-        return ''
-
-    def __repr__(self):
-        return str(self)
-
-
-# Use custom JSON handler for GameStates
-jsonpickle.handlers.registry.register(GameStates, JsonEnumHandler)
-
-
 class RedOrBlack:
 
     def __init__(self, game_code, cleanup_handler=None, options={}):
         self.game_code = game_code
-
         self.p_reg = PlayerRegistery()
         self.c_reg = ClientRegistery()
-
         self.turn = 0
         self.turn_sleep_s = 1
+        self.end_sleep_s = 1
         self.state = GameStates.LOBBY
         self.owner = None
         self.deck = Deck(shuffled=True)
@@ -65,9 +34,10 @@ class RedOrBlack:
         self.penalty_start = options.get('penalty_start', 1)
         self.penalty = options.get('penalty_start', 1)
         self.shutting_down = False
-        self.stats = {
-            'outcomes': []
-        }
+        # self.stats = {
+        #     'outcomes': []
+        # }
+        self.stats = Stats()
 
         self.cleanup_handler = cleanup_handler
 
@@ -222,7 +192,6 @@ class RedOrBlack:
                 logger.debug("All players inactive, calling cleanup")
                 await self.start_cleanup_task()
 
-            # self.inactive_player_ids.add(player.user_id)
             self.c_reg.remove(websocket)
             resp = []
 
@@ -285,11 +254,11 @@ class RedOrBlack:
         self.state = GameStates.PLAYING
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
-    '''
-    Take a players guess and progress the game by one turn, and send the
-    outcome to all the players in the game.
-    '''
     async def play_turn(self, websocket, msg):
+        '''
+        Take a players guess and progress the game by one turn, and send the
+        outcome to all the players in the game.
+        '''
         # Before processing the turn, sleep for some time to add to the suspense
         await asyncio.sleep(self.turn_sleep_s)
         logger.debug('Playing turn')
@@ -326,15 +295,9 @@ class RedOrBlack:
         logger.info(
             f"guess for {player.username}: card={card} guess={guess} correct={correct}")
 
-        # Update the stats of the game
-        self.stats['outcomes'].append({
-            'player': player,
-            'turn': self.turn,
-            'guess': guess,
-            'correct': correct,
-            'card': card,
-            'penalty': return_penalty,
-        })       
+        outcome = Outcome(player, self.turn, guess,
+                          correct, card, return_penalty)
+        self.stats.update(outcome)
 
         if correct:
             self.penalty += self.penalty_increment
@@ -356,12 +319,13 @@ class RedOrBlack:
         self.turn += 1
 
         if len(self.deck.cards) == 0:
-            logger.info(f"{self.game_code}: Deck empty, finishing game")
+            logger.info(f"{self.game_code}: Deck empty, finishing game. Sleeping for {self.end_sleep_s} first")
+            await asyncio.sleep(self.end_sleep_s)
             self.state = GameStates.FINISHED
             await utils.broadcast_message(
                 self.c_reg.websockets(),
                 'GameFinished',
-                stats=self.create_stats(),
+                stats=self.stats.get_stats(),
             )
 
     def get_full_game_state(self):
@@ -375,8 +339,8 @@ class RedOrBlack:
             'state': str(self.state),
             'owner': self.owner,
             'order': self.p_reg.get_order(),
-            'stats': self.create_stats(),
-            'history': self.stats['outcomes'],
+            'stats': self.stats.get_stats(),
+            'history': self.stats.outcomes,
         }
         return state
 
@@ -392,78 +356,3 @@ class RedOrBlack:
         if not order_len:
             return None
         return order[self.turn % order_len]
-
-    def _group_counter(self, counter, reverse=False):
-        '''
-        Given a counter return a dict of place -> [(uname, count)], e.g.
-        { '1': ([mick, john], 20),
-        // 2nd place skipped, because of tie in first place
-        '3': ([stan], 5) }
-        '''
-
-        if reverse:
-            sorted_counter = sorted(list(counter.items()), key=lambda v: v[1])
-        else:
-            sorted_counter = sorted(list(counter.items()), key=lambda v: -v[1])
-
-        places_and_scores = {}
-        place = 0
-        index = 0
-        last_val = None
-        for (uname, count) in sorted_counter:
-            if last_val != count:
-                place += 1
-                index = place
-            else:
-                place += 1
-            if index not in places_and_scores:
-                places_and_scores[index] = ([], count)
-            places_and_scores[index][0].append(uname)
-            last_val = count
-
-        return places_and_scores
-
-    def _build_counters(self, outcomes):
-        stat_keys = ['seconds_drank', 'correct_guesses',
-                     'incorrect_guesses', 'red_guesses', 'black_guesses']
-        stats = defaultdict(dict)
-        for stat_key in stat_keys:
-            for uname in self.p_reg.uname_map.keys():
-                stats[stat_key][uname] = 0
-
-        for outcome in outcomes:
-            uname = outcome['player'].username
-            if outcome['correct']:
-                stats['correct_guesses'][uname] += 1
-            else:
-                stats['incorrect_guesses'][uname] += 1
-                stats['seconds_drank'][uname] += outcome['penalty']
-
-            if outcome['guess'] == 'Red':
-                stats['red_guesses'][uname] += 1
-            else:
-                stats['black_guesses'][uname] += 1
-
-        return stats
-
-    def create_stats(self):
-        '''
-        Compile a dict of interesting stats to display onces the game has finished
-        The stats are as follows:
-            Best player (most correct guesses)
-            Worst player (most wrong guesses)
-            Drunkest (person who drank the most seconds)
-            Reddest (person who guessed red the most)
-            Blackest (person who guessed black the most)
-        '''
-        game_stats = {}
-        # correct_counter, red_counter, black_counter, penalty_counter = self._build_counters()
-        counters = self._build_counters(self.stats['outcomes'])
-
-        game_stats = {
-            'best_players': self._group_counter(counters['correct_guesses']),
-            'worst_players': self._group_counter(counters['incorrect_guesses']),
-            'drunkest_players': self._group_counter(counters['seconds_drank']),
-        }
-
-        return game_stats

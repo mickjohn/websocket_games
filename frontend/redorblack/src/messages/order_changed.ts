@@ -9,7 +9,7 @@ class OrderChanged {
     }
 
     static fromJson(msg: any): OrderChanged | null {
-        const order: Player[] = msg;
+        const order: Player[] = msg['order'];
 
         return new OrderChanged(order);
     }

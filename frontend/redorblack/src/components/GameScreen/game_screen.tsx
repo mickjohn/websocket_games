@@ -2,14 +2,12 @@ import React from 'react';
 import Player from '../../player';
 import Guess from '../../utils/guess';
 import './game_screen.css';
-// import aceOfDiamonds from './ace_diamonds.png';
-// import aceOfSpades from './ace_spades.png';
 import { GameHistory } from '../../GameHistory'
 import DotsThrobber from '../DotsThrobber/dots_throbber';
 
 interface Props {
     turn: number,
-    order: Array<Player>,
+    order: Player[],
     player: Player,
     game_history: GameHistory,
     makeGuessCallback: (guess: Guess) => void;
@@ -31,8 +29,7 @@ class GameScreen extends React.Component<Props>   {
             return undefined;
         }
 
-        let index: number;
-        index = this.props.turn % this.props.order.length;
+        const index: number = this.props.turn % this.props.order.length;
         return this.props.order[index];
     }
 
@@ -43,11 +40,9 @@ class GameScreen extends React.Component<Props>   {
                 <h3>It's your turn!</h3>
                 <div className="ButtonContainer">
                     <button className="Red" onClick={(_e) => this.guessButtonClicked(Guess.Red)}>
-                        {/* <img src={aceOfDiamonds} width="120px" alt="guess red" /> */}
                         Red
                     </button>
                     <button className="Black" onClick={(_e) => this.guessButtonClicked(Guess.Black)}>
-                        {/* <img src={aceOfSpades} width="120px" alt="guess black" /> */}
                         Black
                     </button>
                 </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import './dots_throbber.css';
 
 interface Props {
-    show: boolean;
+    show?: boolean;
 }
 
 export function DotsThrobber(props: Props) {

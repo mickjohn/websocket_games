@@ -7,8 +7,8 @@ from websocketgames.deck import Deck
 from websocketgames.games.high_or_low import validator
 from websocketgames.games.high_or_low import utils
 from websocketgames.games.errors import *
-from websocketgames.games.high_or_low.clients import Client, ClientRegistery
-from websocketgames.games.high_or_low.players import Player, PlayerRegistery
+from websocketgames.games.clients import Client, ClientRegistery
+from websocketgames.games.players import Player, PlayerRegistery
 
 from collections import defaultdict
 import uuid

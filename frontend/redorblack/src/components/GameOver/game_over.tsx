@@ -9,11 +9,11 @@ interface Props {
 }
 
 class Stat {
-    usernames: string[];
+    usernames: string;
     score: number;
     place: number;
 
-    constructor(usernames: string[], score: number, place: number) {
+    constructor(usernames: string, score: number, place: number) {
         this.usernames = usernames;
         this.score = score;
         this.place = place;
@@ -35,7 +35,7 @@ export class Stats {
 function getOrdinal(num_string: string): string {
     if (num_string.endsWith("11") || num_string.endsWith("12") || num_string.endsWith("13")) {
         return "th";
-    } else  if (num_string.endsWith("1")) {
+    } else if (num_string.endsWith("1")) {
         return "st";
     } else if (num_string.endsWith("2")) {
         return "nd";
@@ -60,8 +60,8 @@ export function parseStats(stats: any): Stats {
         parsedStats.set(statType, []);
         Object.keys(stats[statType]).forEach(function (key, index) {
             let item = stats[statType][key];
-            let usernames = item[0];
-            let score = item[1];
+            let usernames = item['usernames'];
+            let score = item['score'];
             let place = parseInt(key);
             let stat = new Stat(usernames, score, place);
             (parsedStats.get(statType) || []).push(stat);
@@ -87,16 +87,17 @@ class GameOver extends React.Component<Props>  {
                 <h2>{title}</h2>
                 <table>
                     <tr>
-                        <th>{ headers[0] }</th>
-                        <th>{ headers[1] }</th>
-                        <th>{ headers[2] }</th>
+                        <th>{headers[0]}</th>
+                        <th>{headers[1]}</th>
+                        <th>{headers[2]}</th>
                     </tr>
                     {stats.map((item, index) => {
                         return (
                             <tr key={index}>
                                 <td>{item.place}<sup>{getOrdinal(`${item.place}`)}</sup></td>
                                 <td>{item.score}</td>
-                                <td>{item.usernames.join('<br/>')}</td>
+                                {/* <td>{item.usernames.join('<br/>')}</td> */}
+                                <td>{item.usernames}</td>
                             </tr>
                         )
                     })}
