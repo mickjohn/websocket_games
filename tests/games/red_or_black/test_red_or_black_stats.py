@@ -77,17 +77,17 @@ def test_stats_get_stats(outcomes):
         stats.update(outcome)
 
     expected = {
-        'correct':  {
+        'best_players':  {
             1: {'score': 3, 'usernames': 'mick'},
             2: {'score': 1, 'usernames': 'john'},
             3: {'score': 0, 'usernames': 'dracula'},
         },
-        'wrong': {
+        'worst_players': {
             1: {'score': 3, 'usernames': 'dracula'},
             2: {'score': 2, 'usernames': 'john'},
             3: {'score': 0, 'usernames': 'mick'},
         },
-        'seconds_drank': {
+        'drunkest_players': {
             1: {'score': 7, 'usernames': 'dracula'},
             2: {'score': 4, 'usernames': 'john'},
             3: {'score': 0, 'usernames': 'mick'}

@@ -12,7 +12,8 @@ import coloredlogs
 frontend_dir = "frontend"
 homepage = "homepage"
 apps = [
-    "redorblack"
+    "redorblack",
+    "highorlow",
 ]
 
 homepage_was_built = False

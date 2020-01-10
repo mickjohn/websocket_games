@@ -237,7 +237,7 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
     # Set cards to something we know
     handler.state = GameStates.PLAYING
     handler.turn_sleep_s = 0
-    handler.deck.cards = [deck.Card('A', 'Clubs')] * 10
+    handler.deck.cards = [deck.Card('Ace', 'Clubs')] * 10
 
     # Guess correct answer
     msg = {'type': 'PlayTurn', 'guess': 'Black'}
@@ -258,7 +258,6 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
             }
         }
     ]
-    assert len(handler.stats['outcomes']) == 1
     assert handler.turn == 1
     assert handler.penalty == handler.penalty_start + handler.penalty_increment
 
@@ -279,58 +278,58 @@ async def test_get_current_player(four_player_game_lobby):
     assert handler.get_current_player() == p1
 
 
-def test_build_counters(outcomes, four_player_game_lobby):
-    (handler, _, _) = four_player_game_lobby
-    counters = handler._build_counters(outcomes)
-    assert counters['seconds_drank']['mick'] == 0
-    assert counters['seconds_drank']['dracula'] == 5
-    assert counters['correct_guesses']['mick'] == 3
-    assert counters['incorrect_guesses']['mick'] == 0
-    assert counters['incorrect_guesses']['dracula'] == 3
-    assert counters['red_guesses']['mick'] == 3
-    assert counters['red_guesses']['dracula'] == 0
-    assert counters['black_guesses']['dracula'] == 3
-
-
-def test_group_counter():
-    handler = RedOrBlack('AAAA')
-    counter = {
-        'mick': 4,
-        'john': 2,
-        'pat': 2,
-        'dracula': 0,
-    }
-
-    expected = {
-        1: (['mick'], 4),
-        2: (['john', 'pat'], 2),
-        4: (['dracula'], 0),
-    }
-    result = handler._group_counter(counter)
-    assert result == expected
-
-
-def test_group_counter_with_reverse():
-    handler = RedOrBlack('AAAA')
-    counter = {
-        'mick': 4,
-        'john': 2,
-        'pat': 2,
-        'dracula': 0,
-    }
-
-    expected = {
-        1: (['dracula'], 0),
-        2: (['john', 'pat'], 2),
-        4: (['mick'], 4),
-    }
-    result = handler._group_counter(counter, reverse=True)
-    print(result)
-    assert result == expected
-
-# def test_create_stats(outcomes, four_player_game_lobby):
+# def test_build_counters(outcomes, four_player_game_lobby):
 #     (handler, _, _) = four_player_game_lobby
-#     handler.stats['outcomes'] = outcomes
-#     result = handler.create_stats()
+#     counters = handler._build_counters(outcomes)
+#     assert counters['seconds_drank']['mick'] == 0
+#     assert counters['seconds_drank']['dracula'] == 5
+#     assert counters['correct_guesses']['mick'] == 3
+#     assert counters['incorrect_guesses']['mick'] == 0
+#     assert counters['incorrect_guesses']['dracula'] == 3
+#     assert counters['red_guesses']['mick'] == 3
+#     assert counters['red_guesses']['dracula'] == 0
+#     assert counters['black_guesses']['dracula'] == 3
+
+
+# def test_group_counter():
+#     handler = RedOrBlack('AAAA')
+#     counter = {
+#         'mick': 4,
+#         'john': 2,
+#         'pat': 2,
+#         'dracula': 0,
+#     }
+
+#     expected = {
+#         1: (['mick'], 4),
+#         2: (['john', 'pat'], 2),
+#         4: (['dracula'], 0),
+#     }
+#     result = handler._group_counter(counter)
+#     assert result == expected
+
+
+# def test_group_counter_with_reverse():
+#     handler = RedOrBlack('AAAA')
+#     counter = {
+#         'mick': 4,
+#         'john': 2,
+#         'pat': 2,
+#         'dracula': 0,
+#     }
+
+#     expected = {
+#         1: (['dracula'], 0),
+#         2: (['john', 'pat'], 2),
+#         4: (['mick'], 4),
+#     }
+#     result = handler._group_counter(counter, reverse=True)
 #     print(result)
-#     assert(False)
+#     assert result == expected
+
+# # def test_create_stats(outcomes, four_player_game_lobby):
+# #     (handler, _, _) = four_player_game_lobby
+# #     handler.stats['outcomes'] = outcomes
+# #     result = handler.create_stats()
+# #     print(result)
+# #     assert(False)

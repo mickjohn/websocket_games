@@ -250,7 +250,7 @@ class RedOrBlack:
                 error=f"User with id {user_id} not allowed to start the game"
             )
             return
-
++
         self.state = GameStates.PLAYING
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
