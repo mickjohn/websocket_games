@@ -1,6 +1,7 @@
 import jsonpickle
 from enum import Enum
 
+
 class JsonEnumHandler(jsonpickle.handlers.BaseHandler):
 
     def restore(self, obj):

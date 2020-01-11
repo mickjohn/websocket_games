@@ -1,45 +1,41 @@
-from websocketgames.games.clients import Client, ClientRegistery
-from websocketgames.games.players import Player, PlayerRegistery
 import asyncio
 import logging
 import uuid
 
+from websocketgames.games.clients import ClientRegistery
+from websocketgames.games.players import Player, PlayerRegistery
+from websocketgames.games.red_or_black import utils
+
+from collections import defaultdict
+
 logger = logging.getLogger('websocketgames')
+
 
 class TurnBasedGame():
 
-    def __init__(self, game_code, cleanup_handler=None):
+    def __init__(self, game_code, cleanup_handler=None, timeout_seconds=30):
         self.game_code = game_code
         self.p_reg = PlayerRegistery()
         self.c_reg = ClientRegistery()
+        self.timeout_seconds = timeout_seconds
         self.cleanup_handler = cleanup_handler
+        self.owner = None
+        self.inactive_player_ids = set()
+        self.inactive_player_counter = defaultdict(int)
 
     async def _cleanup(self):
-        await asyncio.sleep(30)
+        '''
+        Sleep for 30 seconds (in case someone joins), and then call the cleanup
+        callback
+        '''
+        await asyncio.sleep(self.timeout_seconds)
         self.cleanup_handler(self.game_code)
 
     async def start_cleanup_task(self):
         logger.debug("running cleanup")
-        if self.cleanup_handler != None:
+        if self.cleanup_handler is not None:
             task = asyncio.create_task(self._cleanup())
             self.cleanup_task = task
-
-    # async def handle_message(self, json_dict, websocket):
-    #     if json_dict['type'] == 'Debug':
-    #         self._debug()
-    #         return
-    #     validator.validate_msg(json_dict)
-    #     message = json_dict
-    #     msg_type = json_dict['type']
-
-    #     if msg_type == 'Register':
-    #         await self.register_player(websocket, message)
-    #     elif msg_type == 'Activate':
-    #         await self.activate_player(websocket, message)
-    #     elif msg_type == 'StartGame':
-    #         await self.start_game(websocket, message)
-    #     elif msg_type == 'PlayTurn':
-    #         await self.play_turn(websocket, message)
 
     async def register_player(self, websocket, msg):
         '''
@@ -65,9 +61,64 @@ class TurnBasedGame():
         await utils.send_message(websocket, 'Registered', user_id=new_player.user_id)
         return new_player
 
+    async def handle_close(self, websocket):
+        '''
+        Handle the close of a websocket of an active client, and send out
+        messages of the new state. The playing order will change, the owner
+        could change.
+        '''
+        if websocket not in self.c_reg.clients:
+            return
+        logger.debug("Handling websocket disconnection")
+        client = self.c_reg.clients[websocket]
+        if client and client.player:
+            player = client.player
+            self.p_reg.deactivate(player)
+
+            if self.p_reg.all_inactive():
+                logger.debug("All players inactive, calling cleanup")
+                await self.start_cleanup_task()
+
+            self.c_reg.remove(websocket)
+            resp = []
+
+            # Send msg that player has disconnected
+            resp.append({
+                'type': 'PlayerDisconnected',
+                'player': player,
+            })
+
+            if self.owner.user_id == player.user_id:
+                if len(self.p_reg.get_order()):
+                    new_owner = self.p_reg.get_order()[0]
+                else:
+                    new_owner = None
+                self.owner = new_owner
+                # Inform players that there is a new owner
+                resp.append({
+                    'type': 'NewOwner',
+                    'owner': new_owner,
+                })
+
+            # The game order will have changed
+            resp.append({
+                'type': 'OrderChanged',
+                'order': self.p_reg.get_order()
+            })
+
+            for msg in resp:
+                await utils.broadcast_message(
+                    self.c_reg.websockets(),
+                    msg['type'],
+                    **msg,
+                )
+        await websocket.close()
+
     async def activate_player(self, websocket, msg):
         '''
-        Activate a registered Player
+        Activate a registered Player and broadcast two messages, a
+        'PlayerAdded' message, and a 'OrderChanged' message. Returns the player
+        that was added.
         '''
         user_id = msg['user_id']
         if user_id not in self.p_reg.id_map:
@@ -87,11 +138,11 @@ class TurnBasedGame():
         player.active = True
 
         # If game was set to be removed, cancel the task
-        if self.cleanup_task != None:
+        if self.cleanup_task is not None:
             logger.debug('cancelling cleanup')
             self.cleanup_task.cancel()
 
-        if self.owner == None:
+        if self.owner is None:
             self.owner = player
 
         self.c_reg.connect(websocket, player)
@@ -108,12 +159,4 @@ class TurnBasedGame():
             'OrderChanged',
             order=self.p_reg.get_order()
         )
-
-        await utils.send_message(
-            websocket,
-            'YouJoined',
-            player=player,
-            game_state=self.get_full_game_state(),
-        )
-
         return player

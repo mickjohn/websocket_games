@@ -53,6 +53,6 @@ class PlayerRegistery():
 
     def all_inactive(self):
         for (__id, player) in self.id_map.items():
-            if player.active == True:
+            if player.active:
                 return False
         return True

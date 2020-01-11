@@ -1,54 +1,34 @@
-import jsonpickle
 import logging
 import asyncio
 
-
+from websocketgames.games.turn_based import TurnBasedGame
 from websocketgames.deck import Deck
 from websocketgames.games.red_or_black import validator
 from websocketgames.games.red_or_black import utils
-from websocketgames.games.clients import Client, ClientRegistery
-from websocketgames.games.players import Player, PlayerRegistery
 from websocketgames.games.red_or_black.states import GameStates
 from websocketgames.games.red_or_black.stats import Outcome, Stats
-
-from collections import defaultdict
-import uuid
 
 logger = logging.getLogger('websocketgames')
 
 
-class RedOrBlack:
+class RedOrBlack(TurnBasedGame):
 
     def __init__(self, game_code, cleanup_handler=None, options={}):
-        self.game_code = game_code
-        self.p_reg = PlayerRegistery()
-        self.c_reg = ClientRegistery()
+        super().__init__(game_code, cleanup_handler, timeout_seconds=30)
         self.turn = 0
         self.turn_sleep_s = 1
         self.end_sleep_s = 1
         self.state = GameStates.LOBBY
-        self.owner = None
         self.deck = Deck(shuffled=True)
         self.deck.cards = self.deck.cards[0:options.get('number_of_cards', 52)]
         self.penalty_increment = options.get('penalty_increment', 1)
         self.penalty_start = options.get('penalty_start', 1)
         self.penalty = options.get('penalty_start', 1)
         self.shutting_down = False
-        # self.stats = {
-        #     'outcomes': []
-        # }
         self.stats = Stats()
-
-        self.cleanup_handler = cleanup_handler
 
         # Asyncio task for the cleanup callback
         self.cleanup_task = None
-
-        # Set of players that have disconnected
-        self.inactive_player_ids = set()
-
-        # Map of 'player id -> num of seconds inactive
-        self.inactive_player_counter = defaultdict(int)
 
     def __repr__(self):
         return (
@@ -66,20 +46,6 @@ class RedOrBlack:
     def _debug(self):
         logger.debug(self)
 
-    '''
-    Sleep for 30 seconds (in case someone joins), and then call the cleanup
-    callback
-    '''
-    async def _cleanup(self):
-        await asyncio.sleep(30)
-        self.cleanup_handler(self.game_code)
-
-    async def start_cleanup_task(self):
-        logger.debug("running cleanup")
-        if self.cleanup_handler != None:
-            task = asyncio.create_task(self._cleanup())
-            self.cleanup_task = task
-
     async def handle_message(self, json_dict, websocket):
         if json_dict['type'] == 'Debug':
             self._debug()
@@ -91,141 +57,17 @@ class RedOrBlack:
         if msg_type == 'Register':
             await self.register_player(websocket, message)
         elif msg_type == 'Activate':
-            await self.activate_player(websocket, message)
+            player = await self.activate_player(websocket, message)
+            await utils.send_message(
+                websocket,
+                'YouJoined',
+                player=player,
+                game_state=self.get_full_game_state(),
+            )
         elif msg_type == 'StartGame':
             await self.start_game(websocket, message)
         elif msg_type == 'PlayTurn':
             await self.play_turn(websocket, message)
-
-    async def register_player(self, websocket, msg):
-        '''
-        Create a player, but don't add to the game. 'activate_player' must be
-        called afterwards to enable the player. This does not add a new client
-        '''
-        username = msg['username']
-        new_player = Player(username, str(uuid.uuid4()), False)
-
-        if self.p_reg.uname_exists(username):
-            err_msg = f"User {username} already registered in {self.game_code}"
-            logger.error(err_msg)
-            await utils.send_message(
-                websocket,
-                'Error',
-                error_type="UserAlreadyRegistered",
-                error=f"User with name {username} already registered in game"
-            )
-            return None
-
-        logger.info(f"Registering player {username} in game {self.game_code}")
-        self.p_reg.add_player(new_player)
-        await utils.send_message(websocket, 'Registered', user_id=new_player.user_id)
-        return new_player
-
-    async def activate_player(self, websocket, msg):
-        '''
-        Activate a registered Player
-        '''
-        user_id = msg['user_id']
-        if user_id not in self.p_reg.id_map:
-            await utils.send_message(
-                websocket,
-                'Error',
-                error=f"User with id {user_id} does not exist in game {self.game_code}"
-            )
-            return None
-
-        logger.info(f"Activating player {user_id} in game {self.game_code}")
-
-        if user_id in self.inactive_player_ids:
-            self.inactive_player_ids.remove(user_id)
-
-        player = self.p_reg.id_map[user_id]
-        player.active = True
-
-        # If game was set to be removed, cancel the task
-        if self.cleanup_task != None:
-            logger.debug('cancelling cleanup')
-            self.cleanup_task.cancel()
-
-        if self.owner == None:
-            self.owner = player
-
-        self.c_reg.connect(websocket, player)
-
-        await utils.broadcast_message(
-            self.c_reg.websockets(),
-            'PlayerAdded',
-            player=player,
-            skip=[websocket]
-        )
-
-        await utils.broadcast_message(
-            self.c_reg.websockets(),
-            'OrderChanged',
-            order=self.p_reg.get_order()
-        )
-
-        await utils.send_message(
-            websocket,
-            'YouJoined',
-            player=player,
-            game_state=self.get_full_game_state(),
-        )
-
-        return player
-
-    async def handle_close(self, websocket):
-        '''
-        Handle the close of a websocket of an active client, and send out
-        messages of the new state. The playing order will change, the owner
-        could change.
-        '''
-        if websocket not in self.c_reg.clients:
-            return
-        logger.debug("Handling websocket disconnection")
-        client = self.c_reg.clients[websocket]
-        if client and client.player:
-            player = client.player
-            self.p_reg.deactivate(player)
-
-            if self.p_reg.all_inactive():
-                logger.debug("All players inactive, calling cleanup")
-                await self.start_cleanup_task()
-
-            self.c_reg.remove(websocket)
-            resp = []
-
-            # Send msg that player has disconnected
-            resp.append({
-                'type': 'PlayerDisconnected',
-                'player': player,
-            })
-
-            if self.owner.user_id == player.user_id:
-                if len(self.p_reg.get_order()):
-                    new_owner = self.p_reg.get_order()[0]
-                else:
-                    new_owner = None
-                self.owner = new_owner
-                # Inform players that there is a new owner
-                resp.append({
-                    'type': 'NewOwner',
-                    'owner': new_owner,
-                })
-
-            # The game order will have changed
-            resp.append({
-                'type': 'OrderChanged',
-                'order': self.p_reg.get_order()
-            })
-
-            for msg in resp:
-                await utils.broadcast_message(
-                    self.c_reg.websockets(),
-                    msg['type'],
-                    **msg,
-                )
-        await websocket.close()
 
     async def start_game(self, websocket, msg):
         '''
@@ -250,7 +92,7 @@ class RedOrBlack:
                 error=f"User with id {user_id} not allowed to start the game"
             )
             return
-+
+
         self.state = GameStates.PLAYING
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
@@ -266,7 +108,7 @@ class RedOrBlack:
             await utils.send_user_not_found(websocket)
             return
 
-        if self.c_reg.clients[websocket].player == None:
+        if self.c_reg.clients[websocket].player is None:
             await utils.send_user_not_found(websocket)
             return
 
@@ -319,7 +161,8 @@ class RedOrBlack:
         self.turn += 1
 
         if len(self.deck.cards) == 0:
-            logger.info(f"{self.game_code}: Deck empty, finishing game. Sleeping for {self.end_sleep_s} first")
+            logger.info(
+                f"{self.game_code}: Deck empty, finishing game. Sleeping for {self.end_sleep_s} first")
             await asyncio.sleep(self.end_sleep_s)
             self.state = GameStates.FINISHED
             await utils.broadcast_message(

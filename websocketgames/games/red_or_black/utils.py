@@ -45,8 +45,10 @@ async def send_message(websocket, msg_type, **kwargs):
     # Convert the back to json
     await websocket.send(jsonpickle.encode(dict_msg, unpicklable=False))
 
+
 async def send_user_not_found(websocket):
     await send_message(websocket, 'UserNotFound')
+
 
 async def broadcast_message(websockets, msg_type, skip=[], **kwargs):
     for websocket in websockets:

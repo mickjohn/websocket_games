@@ -22,4 +22,3 @@ try:
     asyncio.get_event_loop().run_forever()
 except KeyboardInterrupt:
     logger.info("Shutting down server")
-

@@ -54,5 +54,5 @@ def _sort_stat(data):
 
 def _sort_dict(data):
     def sortfunc(item):
-        return item[1]*-1
+        return item[1] * -1
     return {k: v for k, v in sorted(data.items(), key=sortfunc)}

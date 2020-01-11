@@ -74,7 +74,7 @@ schemas = {
         "properties": {
             "type": {"type": "string"},
             "guess": {"type": "string"},
-        }        
+        }
     }
 }
 
