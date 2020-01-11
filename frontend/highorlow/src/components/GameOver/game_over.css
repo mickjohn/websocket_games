@@ -1,0 +1,26 @@
+.game-over {}
+
+.game-over table, 
+.game-over tr,
+.game-over th, 
+.game-over td {
+    border: 2px solid white;
+}
+
+.game-over th, td {
+    padding: 5px;
+}
+
+.game-over table {
+    border-collapse: collapse;
+    border-radius: 5px;;
+    margin: 0 auto;
+}
+
+.table-div {}
+
+.best-players {}
+
+.worst-players {}
+
+.drunkest-players {}

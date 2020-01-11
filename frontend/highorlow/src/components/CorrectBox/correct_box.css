@@ -1,0 +1,24 @@
+.CorrectBox {
+    margin: 0 auto;
+    max-width: 80%;
+    width: 80%;
+    border-radius: 9px;
+    font-size: 26px;
+    font-weight: bold;
+    background-color: #16883d;
+    padding: 7px 0;
+}
+
+.CorrectBox button {
+    background-color: #20282b;
+    font-size: 20px;
+    font-weight: 700;
+    border-radius: 9px;
+    color: #fafaf8;
+    padding: 4px 12px;
+    border-top: 1px solid #fafaf8;
+    border-right: 3px solid #fafaf8;
+    border-bottom: 3px solid #fafaf8;
+    border-left: 1px solid #fafaf8;
+    cursor: pointer;
+}

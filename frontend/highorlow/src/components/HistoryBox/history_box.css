@@ -1,0 +1,51 @@
+.HistoryBox {
+    margin: 5px;
+    border: 2px solid #ffe66d;
+    overflow: auto;
+    height: 300px;
+}
+
+.HistoryBox table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.HistoryBox tr {
+    border-bottom: 2px solid #ffe66d;
+}
+
+.HistoryBox tr:last-child {
+    border: none;
+}
+
+.username {
+    padding: 10px;
+}
+
+.high-guess {
+    border-radius: 25px;
+    background-color: #4ecdc4;
+    border: 1px solid white;
+    padding: 0px 17px;
+}
+
+.low-guess {
+    border-radius: 25px;
+    background-color: #ff6b6b;
+    border: 1px solid white;
+    padding: 0px 17px;
+}
+
+.good-outcome {
+    color: #31c431;
+    font-weight: bold;
+}
+
+.bad-outcome {
+    color: #f75c5d;
+    font-weight: bold;
+}
+
+.outcome {
+    text-align: right;
+}

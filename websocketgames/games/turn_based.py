@@ -12,6 +12,12 @@ logger = logging.getLogger('websocketgames')
 
 
 class TurnBasedGame():
+    '''
+    A basic class that is supposed to be extended. It provides the following:
+        - Player & Client management
+        - Cleanup
+        - Handle removal of players
+    '''
 
     def __init__(self, game_code, cleanup_handler=None, timeout_seconds=30):
         self.game_code = game_code

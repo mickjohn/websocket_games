@@ -1,5 +1,6 @@
-from websocketgames.games.red_or_black.handler import RedOrBlack, Client, GameStates
+from websocketgames.games.red_or_black.handler import RedOrBlack, GameStates
 from websocketgames.games.players import Player
+from websocketgames.games.clients import Client
 from websocketgames.games.red_or_black import utils
 from websocketgames import code_generator, deck
 import pytest
@@ -127,79 +128,6 @@ def mock_utils_send(monkeypatch):
         mock_utils.broadcast_message,
     )
     return mock_utils
-
-
-@pytest.mark.asyncio
-async def test_register_player_works():
-    ws = MockWebsocket()
-    msg = {'type': 'Register', 'username': 'abc'}
-    handler = RedOrBlack('BAAA')
-    player = await handler.register_player(ws, msg)
-    exmsg = jsonpickle.encode({
-        'type': 'Registered',
-        'user_id': player.user_id
-    }, unpicklable=False)
-    assert ws.message_stack[0] == exmsg
-
-
-@pytest.mark.asyncio
-async def test_register_player_errors_when_user_already_exists():
-    ws = MockWebsocket()
-    msg = {'type': 'Register', 'username': 'abc'}
-    handler = RedOrBlack('BAAA')
-    await handler.register_player(ws, msg)
-    await handler.register_player(ws, msg)
-    exmsg = jsonpickle.encode({
-        'type': 'Error',
-        'error': 'User with name abc already registered in game',
-        'error_type': 'UserAlreadyRegistered',
-    }, unpicklable=False)
-    assert ws.message_stack[1] == exmsg
-
-
-@pytest.mark.asyncio
-async def test_activate_player():
-    ws = MockWebsocket()
-    handler = RedOrBlack('BAAA')
-    player = await handler.register_player(ws, {'type': 'Register', 'username': 'abc'})
-    assert not player.active
-    await handler.activate_player(ws, {'type': 'Activate', 'user_id': player.user_id})
-    assert player.active
-    assert ws.message_stack[1] == jsonpickle.encode(
-        {
-            'type': 'YouJoined',
-            'player': player,
-            'game_state': handler.get_full_game_state()
-        },
-        unpicklable=False
-    )
-
-
-@pytest.mark.asyncio
-async def test_handle_close(mock_utils_send, four_player_game_lobby):
-    # Setup
-    (handler, websockets, players) = four_player_game_lobby
-    (ws1, *_) = websockets
-    (p1, p2, *_) = players
-    handler.state = GameStates.PLAYING
-    handler.owner = p1
-
-    assert len(handler.p_reg.get_order()) == 3
-    await handler.handle_close(ws1)
-    assert len(handler.p_reg.id_map) == 4
-    assert len(handler.p_reg.get_order()) == 2
-    assert len(handler.c_reg.clients) == 2
-    assert handler.owner == p2
-    assert mock_utils_send.broadcast == [
-        {'type': 'PlayerDisconnected', 'player': {
-            'username': 'mick', 'active': False}},
-        {'type': 'NewOwner', 'owner': {
-            'username': 'john', 'active': True}},
-        {'type': 'OrderChanged', 'order': [
-            {'username': 'john', 'active': True},
-            {'username': 'dracula', 'active': True}
-        ]}
-    ]
 
 
 @pytest.mark.asyncio

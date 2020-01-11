@@ -1,0 +1,50 @@
+.GameScreen {
+    margin: 0 auto;
+    max-width: 400px;
+    text-align: center;
+    width: 100;
+}
+
+.TopInfo {
+    max-width: 400px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.ButtonContainer {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.ButtonContainer button {
+    border: none;
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-weight: bold;
+    font-size: 26px;
+    margin: 5px;
+    color: #fafaf8;
+    width: 95px;
+    cursor: pointer;
+}
+
+.ButtonContainer span {
+    font-size: 32px;
+    font-weight: bold;
+    border: solid 2px #ffe66d;
+    width: 115px;
+    border-radius: 7px;
+}
+
+.player-name {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.High {
+    background-color: #4ecdc4;
+}
+
+.Low {
+    background-color: #ff6b6b;
+}

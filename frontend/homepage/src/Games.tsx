@@ -18,6 +18,7 @@ export class Game {
 
 export const games: Array<Game> = [
     new Game('redorblack', 'Red or Black', 0),
+    new Game('highorlow', 'High Or Low', 1),
 ]
 
 export let gameTable: Map<number, Game> = new Map();

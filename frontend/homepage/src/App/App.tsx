@@ -6,6 +6,7 @@ import Game, { games } from '../Games';
 import Spinner from '../components/Spinner/Spinner';
 import ErrorBox from '../components/ErrorBox/ErrorBox';
 import RedOrBlack from '../components/GameForms/red_or_black';
+import HighOrLow from '../components/GameForms/high_or_low';
 import InfoBox from '../components/InfoBox/info_box';
 
 // const websocketBaseUrl = 'ws://localhost:8080'
@@ -62,6 +63,7 @@ class App extends React.Component<Props, State> {
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.createNewGame = this.createNewGame.bind(this);
+    this.gameSelectionChanged = this.gameSelectionChanged.bind(this);
   }
 
   handleChange(event: React.FormEvent<HTMLInputElement>): void {
@@ -271,6 +273,7 @@ class App extends React.Component<Props, State> {
 
   gameSelectionChanged(e: React.FormEvent<HTMLSelectElement>) {
     let newValue: string = e.currentTarget.value;
+    console.log(`Target value = ${newValue}`);
     this.setState({ selected_game: newValue });
   }
 
@@ -283,6 +286,9 @@ class App extends React.Component<Props, State> {
     switch (this.state.selected_game) {
       case "redorblack":
         formElement = <RedOrBlack submitHandler={this.createNewGame} />;
+        break;
+      case "highorlow":
+        formElement = <HighOrLow submitHandler={this.createNewGame} />;
         break;
       default:
         break;
