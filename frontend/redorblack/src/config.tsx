@@ -8,6 +8,6 @@ class Config {
     }
 }
 
-export const config: Config = new Config('ws://prod:9000','prod:9080'); // CHANGEME #1
+export const config: Config = new Config('wss://games.mickjohn.com:8010','games.mickjohn.com'); // CHANGEME #1
 
 export default config;

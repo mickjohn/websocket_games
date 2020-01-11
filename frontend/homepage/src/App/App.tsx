@@ -10,7 +10,7 @@ import HighOrLow from '../components/GameForms/high_or_low';
 import InfoBox from '../components/InfoBox/info_box';
 
 // const websocketBaseUrl = 'ws://localhost:8080'
-const websocketBaseUrl = 'ws://prod:9000' // CHANGEME #2
+const websocketBaseUrl = 'wss://games.mickjohn.com:8010' // CHANGEME #2
 
 interface Props { };
 
