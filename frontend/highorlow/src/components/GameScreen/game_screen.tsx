@@ -63,7 +63,6 @@ class GameScreen extends React.Component<Props>   {
                     <button className="High" onClick={(_e) => this.guessButtonClicked(Guess.High)}>
                         High
                     </button>
-                    {/* <span>{this.props.currentCard.prettyPrint()}</span> */}
                     <span>
                         {this.props.currentCard.rank}
                         <img src={this.getSuitSvg()} alt={this.props.currentCard.suit} height="30" width="30"></img>
