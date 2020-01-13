@@ -254,6 +254,8 @@ class Game extends React.Component<Props, State>   {
                 game_history: parsed_message.history,
                 stats: parsed_message.stats,
                 current_card: parsed_message.currentCard,
+                cards_left: parsed_message.cardsLeft,
+                current_penalty: parsed_message.penalty,
             });
         } else if (parsed_message instanceof messages.PlayerAdded) {
             /***************/
@@ -422,13 +424,14 @@ class Game extends React.Component<Props, State>   {
         }
 
         let gameInfo: JSX.Element | null = null;
-        if (this.state.game_state === GameState.Playing) {
+        if (this.state.game_state === GameState.Playing && this.state.current_card !== undefined) {
             gameInfo = <GameInfo
                 turn={this.state.turn}
                 order={this.state.order}
                 player={this.state.player}
                 cards_left={this.state.cards_left}
                 penalty={this.state.current_penalty}
+                currentCard={this.state.current_card}
             />
         }
 

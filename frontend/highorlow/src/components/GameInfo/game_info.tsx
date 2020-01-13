@@ -1,6 +1,13 @@
 import React from 'react';
 import './game_info.css';
 import Player from '../../player';
+import Card from '../../utils/card';
+
+// SVGs
+import Clubs from './clubs.svg';
+import Spades from './spades.svg';
+import Hearts from './hearts.svg';
+import Diamonds from './diamonds.svg';
 
 interface Props {
     turn: number,
@@ -8,6 +15,7 @@ interface Props {
     player: Player | undefined,
     cards_left: number | null;
     penalty: number | null;
+    currentCard: Card;
 }
 
 
@@ -67,6 +75,19 @@ class GameInfo extends React.Component<Props>   {
         )
     }
 
+    getSuitSvg(): string {
+        const suit = this.props.currentCard.suit;
+        if (suit == 'Clubs') {
+            return Clubs;
+        } else if (suit == 'Spades') {
+            return Spades;
+        } else if (suit == 'Hearts') {
+            return Hearts;
+        } else {
+            return Diamonds;
+        }
+    }
+
     render() {
         let penaltyElem = null;
         if (this.props.penalty !== null) {
@@ -83,6 +104,13 @@ class GameInfo extends React.Component<Props>   {
                 {this.createUpcomingPlayersBox()}
                 {penaltyElem}
                 {cardsLeft}
+                <br />
+                <div className="TopInfoCurrentCard">
+                    Current Card
+                    <br />
+                    <span className="CardRank">{this.props.currentCard.rank}</span>
+                    <img src={this.getSuitSvg()} alt={this.props.currentCard.suit} height="30" width="30"></img>
+                </div>
             </div>
         )
     }

@@ -184,6 +184,8 @@ class RedOrBlack(TurnBasedGame):
             'order': self.p_reg.get_order(),
             'stats': self.stats.get_stats(),
             'history': self.stats.outcomes,
+            'penalty': self.penalty,
+            'cards_left': len(self.deck.cards),
         }
         return state
 

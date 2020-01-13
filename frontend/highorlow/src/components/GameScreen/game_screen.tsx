@@ -6,12 +6,6 @@ import { GameHistory } from '../../GameHistory'
 import DotsThrobber from '../DotsThrobber/dots_throbber';
 import Card from '../../utils/card';
 
-// SVGs
-import Clubs from './clubs.svg';
-import Spades from './spades.svg';
-import Hearts from './hearts.svg';
-import Diamonds from './diamonds.svg';
-
 interface Props {
     turn: number,
     order: Player[],
@@ -41,20 +35,6 @@ class GameScreen extends React.Component<Props>   {
         return this.props.order[index];
     }
 
-    getSuitSvg() {
-        const suit = this.props.currentCard.suit;
-        if (suit == 'Clubs') {
-            return Clubs;
-        } else if (suit == 'Spades') {
-            return Spades;
-        } else if (suit == 'Hearts') {
-            return Hearts;
-        } else {
-            return Diamonds;
-        }
-    }
-
-    // The guess sections shows the red/black buttons
     createGuessSection(): JSX.Element {
         return (
             <div>
@@ -63,10 +43,9 @@ class GameScreen extends React.Component<Props>   {
                     <button className="High" onClick={(_e) => this.guessButtonClicked(Guess.High)}>
                         High
                     </button>
-                    <span>
-                        {this.props.currentCard.rank}
-                        <img src={this.getSuitSvg()} alt={this.props.currentCard.suit} height="30" width="30"></img>
-                    </span>
+                    {/* <button className="Same" onClick={(_e) => this.guessButtonClicked(Guess.High)}>
+                        Same
+                    </button> */}
                     <button className="Low" onClick={(_e) => this.guessButtonClicked(Guess.Low)}>
                         Low
                     </button>

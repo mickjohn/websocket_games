@@ -22,7 +22,7 @@ class HighOrLow(TurnBasedGame):
         self.state = GameStates.LOBBY
         self.owner = None
         self.deck = Deck(shuffled=True)
-        self.deck.cards = self.deck.cards[1:options.get('number_of_cards', 52)]
+        self.deck.cards = self.deck.cards[0:options.get('number_of_cards', 52)]
         self.current_card = self.deck.draw_card()
         self.penalty_increment = options.get('penalty_increment', 1)
         self.penalty_start = options.get('penalty_start', 1)
@@ -202,6 +202,8 @@ class HighOrLow(TurnBasedGame):
             'stats': self.stats.get_stats(),
             'history': self.stats.outcomes,
             'current_card': self.current_card,
+            'penalty': self.penalty,
+            'cards_left': len(self.deck.cards),
         }
         return state
 

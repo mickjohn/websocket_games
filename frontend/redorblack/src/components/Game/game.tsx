@@ -248,6 +248,8 @@ class Game extends React.Component<Props, State>   {
                 order: parsed_message.order,
                 game_history: parsed_message.history,
                 stats: parsed_message.stats,
+                cards_left: parsed_message.cardsLeft,
+                current_penalty: parsed_message.penalty,
             });
         } else if (parsed_message instanceof messages.PlayerAdded) {
             /***************/

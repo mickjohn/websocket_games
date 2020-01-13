@@ -55,7 +55,7 @@ class HighOrLow extends React.Component<Props, State> {
         return (
             <div>
                 <form className="GameSettings" onSubmit={this.handleSubmit}>
-                    <h3>Settings for new Red Or Black game</h3>
+                    <h3>Settings for new High Or Low game</h3>
 
                     <div>
                         <label htmlFor='start_penalty'><b>Starting Penalty</b></label>

@@ -14,6 +14,8 @@ class YouJoined {
     stats: Stats | null;
     turn: number;
     order: Player[];
+    penalty: number;
+    cardsLeft: number;
 
     constructor(
         state: GameState,
@@ -24,6 +26,8 @@ class YouJoined {
         stats: Stats | null,
         turn: number,
         order: Player[],
+        penalty: number,
+        cardsLeft: number,
     ) {
         this.state = state;
         this.player = player;
@@ -33,6 +37,8 @@ class YouJoined {
         this.stats = stats;
         this.turn = turn;
         this.order = order;
+        this.penalty = penalty;
+        this.cardsLeft = cardsLeft;
     }
 
     static fromJson(msg: any): YouJoined | null {
@@ -45,7 +51,11 @@ class YouJoined {
         const history = new GameHistory();
         const turn: number = gameState['turn'];
         const order: Player[] = gameState['order'];
+        const penalty: number = gameState['penalty'];
+        const cardsLeft: number = gameState['cards_left'];
+
         let stats: Stats | null = null;
+
 
         if (state === GameState.Finished) {
             stats = parseStats(msg['stats']);
@@ -77,6 +87,8 @@ class YouJoined {
             stats,
             turn,
             order,
+            penalty,
+            cardsLeft,
         );
     }
 }

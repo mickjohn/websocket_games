@@ -16,6 +16,8 @@ class YouJoined {
     turn: number;
     order: Player[];
     currentCard: Card;
+    penalty: number;
+    cardsLeft: number;
 
     constructor(
         state: GameState,
@@ -27,6 +29,8 @@ class YouJoined {
         turn: number,
         order: Player[],
         currentCard: Card,
+        penalty: number,
+        cardsLeft: number,
     ) {
         this.state = state;
         this.player = player;
@@ -37,6 +41,8 @@ class YouJoined {
         this.turn = turn;
         this.order = order;
         this.currentCard = currentCard;
+        this.penalty = penalty;
+        this.cardsLeft = cardsLeft;
     }
 
     static fromJson(msg: any): YouJoined | null {
@@ -50,6 +56,8 @@ class YouJoined {
         const turn: number = gameState['turn'];
         const order: Player[] = gameState['order'];
         const currentCard: Card = new Card(gameState['current_card']['suit'], gameState['current_card']['rank']);
+        const penalty: number = gameState['penalty'];
+        const cardsLeft: number = gameState['cards_left'];
         let stats: Stats | null = null;
 
         if (state === GameState.Finished) {
@@ -83,6 +91,8 @@ class YouJoined {
             turn,
             order,
             currentCard,
+            penalty,
+            cardsLeft,
         );
     }
 }

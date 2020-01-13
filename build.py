@@ -63,12 +63,15 @@ class Builder:
 
     def need_install(self):
         package = path.join(self.project_dir, 'package.json')
+        package_lock = path.join(self.project_dir, 'package-lock.json')
         modules = path.join(self.project_dir, 'node_modules')
-        if path.exists(package):
-            if path.exists(modules):
-                return path.getmtime(package) >= path.getmtime(modules)
-            else:
-                return True
+        newer_package = path.getmtime(package) >= path.getmtime(modules)
+        newer_lock = path.getmtime(package_lock) >= path.getmtime(modules)
+
+        if path.exists(modules):
+            return newer_package or newer_lock
+        else:
+            return True
         return False
 
     def need_build(self):
@@ -132,7 +135,7 @@ def build_homepage():
     d = path.join(frontend_dir, homepage)
     builder = Builder(d)
     if builder.need_install():
-        logger.info(f"homepage: building...")
+        logger.info(f"homepage: installing...")
         builder.install()
     else:
         logger.info(f"homepage: no need to install")
@@ -153,7 +156,7 @@ def build_apps():
         appname = path.basename(d)
         builder = Builder(d)
         if builder.need_install():
-            logger.info(f"{appname}: building...")
+            logger.info(f"{appname}: installing...")
             builder.install()
         else:
             logger.info(f"{appname}: no need to install")

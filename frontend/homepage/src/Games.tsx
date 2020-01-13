@@ -1,4 +1,3 @@
-import { Property } from "@babel/types";
 
 export class Game {
     path: string;
@@ -17,7 +16,7 @@ export class Game {
 }
 
 export const games: Array<Game> = [
-    new Game('redorblack', 'Red or Black', 0),
+    new Game('redorblack', 'Red Or Black', 0),
     new Game('highorlow', 'High Or Low', 1),
 ]
 

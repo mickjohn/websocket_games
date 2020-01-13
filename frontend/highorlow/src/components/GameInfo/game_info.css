@@ -3,3 +3,17 @@
     display: flex;
     justify-content: space-between;
 }
+
+.TopInfoCurrentCard {
+    margin-top: 20px;
+    font-size: 25px;
+    border: solid 2px #ffe66d;
+    width: 190px;
+    border-radius: 7px;
+    display: inline-block;
+}
+
+.CardRank {
+    font-weight: bold;
+    font-size: 32px;
+}
