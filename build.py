@@ -65,13 +65,17 @@ class Builder:
         package = path.join(self.project_dir, 'package.json')
         package_lock = path.join(self.project_dir, 'package-lock.json')
         modules = path.join(self.project_dir, 'node_modules')
-        newer_package = path.getmtime(package) >= path.getmtime(modules)
-        newer_lock = path.getmtime(package_lock) >= path.getmtime(modules)
 
-        if path.exists(modules):
-            return newer_package or newer_lock
-        else:
+        if not path.exists(modules):
             return True
+
+        if path.exists(package):
+            if path.getmtime(package) >= path.getmtime(modules):
+                return True
+
+        if path.exists(package_lock):
+            if path.getmtime(package_lock) >= path.getmtime(modules):
+                return True
         return False
 
     def need_build(self):
