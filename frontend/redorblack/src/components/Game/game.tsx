@@ -6,7 +6,7 @@ import GameState from '../../utils/game_state';
 import './game.css';
 import { GameHistory } from '../../GameHistory';
 import vibrate from '../../utils/vibrate';
-import { Stats, parseStats } from '../GameOver/game_over';
+import { Stats } from '../GameOver/game_over';
 import parseJsonMessage from '../../messages/parser';
 import * as messages from '../../messages/parser';
 
@@ -52,17 +52,14 @@ interface State {
     players: Map<string, Player>;
 
     // The current player of the game
-    player: Player | undefined;
+    player?: Player;
 
     // The owner is the first player to join the game.
     // Only the owner can start the game
-    owner: Player | undefined;
+    owner?: Player;
 
     // The playing state of the game, e.g. lobby, finished
     game_state: GameState;
-
-    // A class containing the required URL params 
-    url_params: UrlParams;
 
     // Game turn number
     turn: number;
@@ -86,8 +83,10 @@ interface State {
     waiting_for_result: boolean;
 
     // Array of players in order of thier turn
-    // order: Array<Player>;
     order: Player[];
+
+    // Stats
+    stats: Stats | null;
 
     // What to do when start game clicked
     start_game_handler: (event: any) => void;
@@ -100,9 +99,6 @@ interface State {
 
     // Function to cleat the correct box.
     clearCorrectCallback: () => void;
-
-    // Stats
-    stats: Stats | null;
 }
 
 interface Props { }
@@ -138,7 +134,7 @@ class Game extends React.Component<Props, State>   {
             makeGuessHandler: this.makeGuessCallback.bind(this),
             clearPenaltyHandler: this.clearPenaltyHandler.bind(this),
             clearCorrectCallback: this.clearCorrectCallback.bind(this),
-            url_params: params,
+            // url_params: params,
             turn: 0,
             penalty: null,
             current_penalty: null,
@@ -430,7 +426,7 @@ class Game extends React.Component<Props, State>   {
                 <header className="GameHeader">Red or Black</header>
                 <div className="GameScreen">
                     <ConnStatus status={this.state.websocketStatus} />
-                    <h3>game id is {this.state.url_params.game_id}</h3>
+                    <h3>game id is {this.state.game_id}</h3>
                     {isPlaying && gameInfo}
                     {isPlaying && <div className="InteractiveContent">
                         {stateElement}
@@ -457,10 +453,10 @@ class Game extends React.Component<Props, State>   {
     /*************/
     startGameCallback() {
         console.debug('Start game clicked');
-        let urlParams = this.state.url_params;
+        let userId: string = this.state.user_id;
         const msg = {
             'type': 'StartGame',
-            'user_id': urlParams.user_id,
+            'user_id': userId,
         };
         this.state.websocket.send(JSON.stringify(msg));
     }
