@@ -1,5 +1,6 @@
 import Player from '../player';
 import { GameHistoryItem } from '../GameHistory';
+import Card from '../card';
 
 class GuessOutcome {
     static msgtype = "GuessOutcome";
@@ -11,6 +12,7 @@ class GuessOutcome {
     newPenalty: number;
     cardsLeft: number;
     turn: number;
+    historyItem: GameHistoryItem;
 
     constructor(
         player: Player,
@@ -19,7 +21,8 @@ class GuessOutcome {
         penalty: number,
         newPenalty: number,
         cardsLeft: number,
-        turn: number
+        turn: number,
+        historyItem: GameHistoryItem,
     ) {
         this.player = player;
         this.guess = guess;
@@ -28,9 +31,21 @@ class GuessOutcome {
         this.newPenalty = newPenalty;
         this.cardsLeft = cardsLeft;
         this.turn = turn;
+        this.historyItem = historyItem;
     }
 
     static fromJson(msg: any): GuessOutcome | null {
+        let card = new Card(msg['outcome']['card']['suit'], msg['outcome']['card']['rank']);
+        const historyItem = new GameHistoryItem(
+            msg['player'],
+            msg['guess'],
+            msg['correct'],
+            msg['penalty'],
+            msg['turn'],
+            card,
+        );
+        console.log(`new item = ${historyItem}`);
+
         return new GuessOutcome(
             msg['player'],
             msg['guess'],
@@ -38,18 +53,13 @@ class GuessOutcome {
             msg['penalty'],
             msg['new_penalty'],
             msg['cards_left'],
-            msg['turn']
+            msg['turn'],
+            historyItem,
         );
     }
 
     createGameHistoryItem(): GameHistoryItem {
-        return new GameHistoryItem(
-            this.player.username,
-            this.guess,
-            this.correct,
-            this.penalty,
-            this.turn,
-        );
+        return this.historyItem;
     }
 }
 

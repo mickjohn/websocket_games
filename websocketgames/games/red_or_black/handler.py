@@ -156,6 +156,7 @@ class RedOrBlack(TurnBasedGame):
             new_penalty=self.penalty,
             player=player,
             cards_left=len(self.deck.cards),
+            outcome=outcome,
         )
 
         self.turn += 1

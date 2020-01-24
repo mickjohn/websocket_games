@@ -20,3 +20,31 @@
   display: flex;
   align-items: center;
 }
+
+.HistoryModal button {
+  color: #fafaf8;
+  background-color: #f84445;
+  padding: 4px 12px;
+  border-color: #fafaf8;
+  border-style: solid;
+  border-width: 1px 3px 3px 1px;
+  cursor: pointer;
+  border-radius: 9px;
+  font-weight: bold;
+  margin: 10px 0 10px 0;
+}
+
+.ShowHistoryButton {
+  /* background-color: #20282b; */
+  background-color: #fafaf8;
+  font-size: 20px;
+  /* color: #fafaf8; */
+  color: #20282b;
+  padding: 4px 12px;
+  border-color: #23b1e6;
+  border-style: solid;
+  border-width: 1px 3px 3px 1px;
+  cursor: pointer;
+  border-radius: 9px;
+  font-weight: bold;
+}

@@ -1,39 +1,35 @@
 .HistoryBox {
-    margin: 5px;
-    border: 2px solid #505759;
     overflow: auto;
-    height: 300px;
+    /* height: 120px; */
+    max-height: 60vh;
 }
 
 .HistoryBox table {
     width: 100%;
     border-collapse: collapse;
+    border-top: 1px solid #f84445;
+    border-bottom: 1px solid #f84445;
 }
 
-.HistoryBox tr {
-    border-bottom: 2px solid #505759;
+.HistoryBoxHeader {
+    border-bottom: 2px solid #f84445;
+    font-size: 20px;
 }
 
-.HistoryBox tr:last-child {
-    border: none;
-}
-
-.username {
-    padding: 10px;
+.HistoryBox tr:nth-child(even) {
+    background-color: #344146;
 }
 
 .red-guess {
     border-radius: 25px;
-    background-color: #f84445;
-    border: 2px solid #fc7778;
-    padding: 0px 17px;
+    text-decoration: underline;
+    text-decoration-color: #f84445;
 }
 
 .black-guess {
     border-radius: 25px;
-    background-color: #000;
-    border: 2px solid #222222;
-    padding: 0px 17px;
+    text-decoration: underline;
+    text-decoration-color: black;
 }
 
 .good-outcome {

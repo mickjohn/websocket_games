@@ -44,8 +44,9 @@ class HistoryBox extends React.Component<Props>   {
         this.props.game_history.items().forEach(item => {
             listItems.push(<tr>
                 <td>{item.turn + 1}</td>
-                {this.createNameData(item.username)}
+                {this.createNameData(item.player.username)}
                 {this.createGuessData(item.guess)}
+                <td>{item.card.rank.substring(0, 1)}{item.card.suitIcon}</td>
                 {this.createOutcomeData(item.correct)}
             </tr>);
         });
@@ -62,10 +63,11 @@ class HistoryBox extends React.Component<Props>   {
         return (
             <div className="HistoryBox">
                 <table>
-                    <tr>
+                    <tr className="HistoryBoxHeader" >
                         <th>turn</th>
-                        <th>username</th>
+                        <th>user</th>
                         <th>guess</th>
+                        <th>card</th>
                         <th>outcome</th>
                     </tr>
                     {listItems}

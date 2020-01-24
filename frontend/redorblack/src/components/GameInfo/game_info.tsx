@@ -6,8 +6,8 @@ interface Props {
     turn: number,
     order: Array<Player>,
     player: Player | undefined,
-    cards_left: number | null;
-    penalty: number | null;
+    cards_left?: number;
+    penalty?: number;
 }
 
 

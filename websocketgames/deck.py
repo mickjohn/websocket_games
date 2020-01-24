@@ -56,7 +56,7 @@ class Card():
         if suit not in Card.allowed_suits:
             raise Exception(f"Suit {suit} is not one of the allowed suits")
 
-        self.rank_values = {
+        self._rank_values = {
             'Ace': 0,
             '1': 1,
             '2': 2,
@@ -73,7 +73,7 @@ class Card():
             'King': 13,
         }
         if aces_high:
-            self.rank_values['Ace'] = 14
+            self._rank_values['Ace'] = 14
         self.suit = suit
         self.rank = rank
 
@@ -100,4 +100,4 @@ class Card():
     def __lt__(self, other):
         if not self._is_valid_operand(other):
             return NotImplemented
-        return self.rank_values[self.rank] < self.rank_values[other.rank]
+        return self._rank_values[self.rank] < self._rank_values[other.rank]

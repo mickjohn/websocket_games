@@ -3,7 +3,6 @@ import config from '../../config';
 import Guess from '../../utils/guess';
 import UrlParams from '../../utils/url_params';
 import GameState from '../../utils/game_state';
-import './game.css';
 import { GameHistory } from '../../GameHistory';
 import vibrate from '../../utils/vibrate';
 import { Stats } from '../GameOver/game_over';
@@ -21,7 +20,12 @@ import CorrectBox from '../CorrectBox/correct_box';
 import DotsThrobber from '../DotsThrobber/dots_throbber';
 import GameInfo from '../GameInfo/game_info';
 import GameOver from '../GameOver/game_over';
+import Modal from '../Modal/modal';
+import PlayerList from '../PlayerList/player_list';
 
+// Css:
+import './game.css';
+import '../Modal/modal.css';
 
 function parseState(s: string): GameState {
     console.debug(`state = ${s}`);
@@ -71,10 +75,10 @@ interface State {
     penalty: number | null;
 
     // The current penalty (for info)
-    current_penalty: number | null;
+    current_penalty?: number;
 
     // The number of cards left in the deck
-    cards_left: number | null;
+    cards_left?: number;
 
     // If true show 'your correct box'
     show_correct: boolean;
@@ -88,6 +92,9 @@ interface State {
     // Stats
     stats: Stats | null;
 
+    // Whether or not to show the modal
+    show_modal: boolean;
+
     // What to do when start game clicked
     start_game_handler: (event: any) => void;
 
@@ -99,12 +106,15 @@ interface State {
 
     // Function to cleat the correct box.
     clearCorrectCallback: () => void;
+
+    // Function to close the modal
+    closeModalCallback: () => void;
 }
 
 interface Props { }
 
 class Game extends React.Component<Props, State>   {
-    _ismounted: boolean;
+    // _ismounted: boolean;
     _conn_status: string;
 
     constructor(props: Props) {
@@ -116,7 +126,7 @@ class Game extends React.Component<Props, State>   {
 
         let params: UrlParams = this.getUrlParams();
 
-        this._ismounted = false;
+        // this._ismounted = false;
         this._conn_status = "not connected";
         let websocket: WebSocket = this.createWebsocket(`${config.websocketUrl}/game_${params.game_id}`);
         this.state = {
@@ -134,14 +144,15 @@ class Game extends React.Component<Props, State>   {
             makeGuessHandler: this.makeGuessCallback.bind(this),
             clearPenaltyHandler: this.clearPenaltyHandler.bind(this),
             clearCorrectCallback: this.clearCorrectCallback.bind(this),
-            // url_params: params,
+            closeModalCallback: this.closeModalCallback.bind(this),
             turn: 0,
             penalty: null,
-            current_penalty: null,
+            current_penalty: undefined,
             waiting_for_result: false,
             order: [],
-            cards_left: null,
+            cards_left: undefined,
             stats: null,
+            show_modal: false,
         };
 
         websocket.onopen = () => {
@@ -175,21 +186,21 @@ class Game extends React.Component<Props, State>   {
         window.location.href = url;
     }
 
-    componentDidMount(): void {
-        this._ismounted = true;
-    }
+    // componentDidMount(): void {
+    //     this._ismounted = true;
+    // }
 
-    componentWillUnmount(): void {
-        this._ismounted = false;
-    }
+    // componentWillUnmount(): void {
+    //     this._ismounted = false;
+    // }
 
-    getCurrentPlayer(): Player | null {
+    getCurrentPlayer(): Player | undefined {
         if (this.state.order.length > 0) {
             const index: number = this.state.turn % this.state.order.length;
             const currentPlayer: Player = this.state.order[index];
             return currentPlayer;
         }
-        return null;
+        return undefined;
     }
 
     getNextPlayer(): Player | null {
@@ -203,7 +214,7 @@ class Game extends React.Component<Props, State>   {
 
     isPlayersGo(): boolean {
         const currentPlayer = this.getCurrentPlayer();
-        if (currentPlayer !== null) {
+        if (currentPlayer !== undefined) {
             return this.state.player !== undefined && this.state.player.username === currentPlayer.username;
         }
         return false;
@@ -229,7 +240,6 @@ class Game extends React.Component<Props, State>   {
         if (parsed_message === null) {
             return;
         }
-
 
         if (parsed_message instanceof messages.YouJoined) {
             /*************/
@@ -360,7 +370,7 @@ class Game extends React.Component<Props, State>   {
         }
         const item = hist.items()[0];
         console.log(`hist item = ${item}`);
-        if (item.username === this.state.player.username) {
+        if (item.player.username === this.state.player.username) {
             if (!item.correct) {
                 return item.penalty;
             }
@@ -372,6 +382,11 @@ class Game extends React.Component<Props, State>   {
         let isPlaying = this.state.game_state === GameState.Playing;
         let isFinished = this.state.game_state === GameState.Finished;
         let stateElement: JSX.Element | null = null;
+
+        const classes: string[] = [];
+        if (this.state.show_modal) {
+            classes.push("modal");
+        }
 
         if (this.state.game_state === GameState.NoState) {
             stateElement = <p>no state</p>;
@@ -422,27 +437,52 @@ class Game extends React.Component<Props, State>   {
         }
 
         return (
-            <div>
+            <div className={classes.join(" ")}>
                 <header className="GameHeader">Red or Black</header>
                 <div className="GameScreen">
                     <ConnStatus status={this.state.websocketStatus} />
                     <h3>game id is {this.state.game_id}</h3>
-                    {isPlaying && gameInfo}
-                    {isPlaying && <div className="InteractiveContent">
-                        {stateElement}
-                        <PenaltyBox
-                            penalty={this.state.penalty}
-                            clearPenaltyCallback={this.state.clearPenaltyHandler}
-                        />
-                        <CorrectBox
-                            show_box={this.state.show_correct}
-                            clearCorrectCallback={this.state.clearCorrectCallback}
-                        />
-                        <DotsThrobber show={this.state.waiting_for_result} />
-                    </div>}
-                    {!isPlaying && lobby}
-                    {isPlaying && <HistoryBox game_history={this.state.game_history} />}
+                    {isPlaying &&
+                        <>
+                            {gameInfo}
+
+                            <div className="InteractiveContent">
+                                {stateElement}
+                                <PenaltyBox
+                                    penalty={this.state.penalty}
+                                    clearPenaltyCallback={this.state.clearPenaltyHandler}
+                                />
+                                <CorrectBox
+                                    show_box={this.state.show_correct}
+                                    clearCorrectCallback={this.state.clearCorrectCallback}
+                                />
+                                <DotsThrobber show={this.state.waiting_for_result} />
+                            </div>
+
+                            <button
+                                className="ShowHistoryButton"
+                                onClick={() => this.setState({ show_modal: true })}
+                            >
+                                Show History
+                            </button>
+
+                            {this.state.show_modal &&
+                                <Modal className="HistoryModal" closeModal={this.state.closeModalCallback}>
+                                    <button onClick={() => this.setState({ show_modal: false })} >Close</button>
+                                    {this.isPlayersGo() && <h3>It's your Go!</h3>}
+                                    <HistoryBox game_history={this.state.game_history} />
+                                </Modal>
+                            }
+
+                            <PlayerList order={this.state.order} currentPlayer={this.getCurrentPlayer()} />
+                        </>
+                    }
+
+                    {/* Show the game over screen and stats if game is finished */}
                     {isFinished && <GameOver stats={this.state.stats} />}
+
+                    {/* Show lobby if not playing  */}
+                    {this.state.game_state == GameState.Lobby && lobby}
                 </div>
             </div>
         );
@@ -486,6 +526,10 @@ class Game extends React.Component<Props, State>   {
     clearCorrectCallback() {
         vibrate(40);
         this.setState({ show_correct: false });
+    }
+
+    closeModalCallback() {
+        this.setState({ show_modal: false });
     }
 
     /*****************/

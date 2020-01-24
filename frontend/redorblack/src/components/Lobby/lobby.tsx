@@ -42,7 +42,7 @@ class Lobby extends React.Component<Props>   {
             <div className="Lobby">
                 <h4>Start the game when all players have joined</h4>
                 {ownerElem}
-                <div className="PlayerList">
+                <div className="LobbyPlayerList">
                     <h2>Players</h2>
                     <ul>{listItems}</ul >
                 </div>

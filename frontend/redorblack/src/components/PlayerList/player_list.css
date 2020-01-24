@@ -1,0 +1,18 @@
+.PlayerList {
+    border: 2px solid #f84445;
+    border-radius: 15px;
+    text-align: center;
+    list-style: none;
+    padding: 0;
+    margin: 10px;
+    padding: 5px;
+}
+
+.PlayerList li {
+    padding: 0;
+}
+
+.PlayerListCurrentPlayer {
+    font-size: 25px;
+    font-weight: bold;
+}

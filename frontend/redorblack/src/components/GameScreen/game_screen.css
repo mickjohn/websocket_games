@@ -17,7 +17,6 @@
 }
 
 .ButtonContainer button {
-    border: none;
     border-radius: 10px;
     padding: 6px 12px;
     font-weight: bold;
@@ -35,8 +34,16 @@
 
 .Red {
     background-color: #f84445;
+    border-top: 1px solid #ffb8b8;
+    border-right: 3px solid #ffb8b8;
+    border-bottom: 3px solid #ffb8b8;
+    border-left: 1px solid #ffb8b8;
 }
 
 .Black {
     background-color: black;
+    border-top: 1px solid #6a6a6a;
+    border-right: 3px solid #6a6a6a;
+    border-bottom: 3px solid #6a6a6a;
+    border-left: 1px solid #6a6a6a;
 }

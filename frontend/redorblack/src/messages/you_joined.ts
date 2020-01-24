@@ -3,6 +3,7 @@ import { GameHistory, GameHistoryItem } from '../GameHistory';
 import { Stats, parseStats } from '../components/GameOver/game_over';
 import Player from '../player';
 import * as Game from '../components/Game/game';
+import Card from '../card';
 
 class YouJoined {
     static msgtype = "YouJoined";
@@ -63,11 +64,12 @@ class YouJoined {
 
         for (let outcome of historyJson) {
             const histItem: GameHistoryItem = new GameHistoryItem(
-                outcome['player']['username'],
+                outcome['player'],
                 outcome['guess'],
                 outcome['correct'],
                 outcome['penalty'],
                 outcome['turn'],
+                new Card(outcome['card']['suit'], outcome['card']['rank']),
             );
             history.addItem(histItem);
         }

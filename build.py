@@ -125,9 +125,11 @@ class Builder:
         )
 
         if outcome.returncode != 0:
+            stdout = outcome.stdout.decode('UTF-8')
+            stderr = outcome.stderr.decode('UTF-8')
             err_msg = (
-                f"npm {' '.join(args)} failed\nstdout={outcome.stdout}\n"
-                f"stderr={outcome.stderr}\nreturn code={outcome.returncode}"
+                f"npm {' '.join(args)} failed\n{stdout}\n"
+                f"{stderr}\nreturn code={outcome.returncode}"
             )
             print(err_msg)
             sys.exit(1)
