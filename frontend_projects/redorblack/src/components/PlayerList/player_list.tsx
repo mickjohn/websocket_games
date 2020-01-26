@@ -28,12 +28,12 @@ class PlayerList extends React.Component<Props>   {
         }
 
         return (
-            <>
-                <h3>Players</h3>
-                <ul className="PlayerList">
+            <div className="PlayerList">
+                <h1><u>Players</u></h1>
+                <ul>
                     {listItems}
                 </ul>
-            </>
+            </div>
         );
     }
 }

@@ -1,15 +1,23 @@
 .PlayerList {
     border: 2px solid #f84445;
     border-radius: 15px;
-    text-align: center;
-    list-style: none;
     padding: 0;
     margin: 10px;
     padding: 5px;
+    /* text-decoration: underline #f84445; */
+    /* text-decoration-color: #f84445; */
+}
+
+.PlayerList ul {
+    text-align: center;
+    list-style: none;
+    padding: 0;
+    text-decoration: none;
 }
 
 .PlayerList li {
     padding: 0;
+    text-decoration: none;
 }
 
 .PlayerListCurrentPlayer {

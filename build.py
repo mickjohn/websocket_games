@@ -9,7 +9,7 @@ import logging
 import coloredlogs
 
 
-frontend_dir = "frontend"
+frontend_dir = "frontend_projects"
 homepage = "homepage"
 apps = [
     "redorblack",

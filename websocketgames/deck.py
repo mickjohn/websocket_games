@@ -45,35 +45,34 @@ class Deck():
 
 @total_ordering
 class Card():
-    number_ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10']
-    face_ranks = ['Ace', 'Jack', 'Queen', 'King']
-    allowed_suits = ['Clubs', 'Diamonds', 'Hearts', 'Spades']
-    allowed_ranks = number_ranks + face_ranks
+    _number_ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10']
+    _face_ranks = ['Ace', 'Jack', 'Queen', 'King']
+    _allowed_suits = ['Clubs', 'Diamonds', 'Hearts', 'Spades']
+    _allowed_ranks = _number_ranks + _face_ranks
+    _rank_values = {
+        'Ace': 0,
+        '1': 1,
+        '2': 2,
+        '3': 3,
+        '4': 4,
+        '5': 5,
+        '6': 6,
+        '7': 7,
+        '8': 8,
+        '9': 9,
+        '10': 10,
+        'Jack': 11,
+        'Queen': 12,
+        'King': 13,
+    }
 
     def __init__(self, rank, suit, aces_high=False):
-        if rank not in Card.allowed_ranks:
+        if rank not in Card._allowed_ranks:
             raise Exception(f"Rank {rank} is not one of the allowed ranks")
-        if suit not in Card.allowed_suits:
+        if suit not in Card._allowed_suits:
             raise Exception(f"Suit {suit} is not one of the allowed suits")
 
-        self._rank_values = {
-            'Ace': 0,
-            '1': 1,
-            '2': 2,
-            '3': 3,
-            '4': 4,
-            '5': 5,
-            '6': 6,
-            '7': 7,
-            '8': 8,
-            '9': 9,
-            '10': 10,
-            'Jack': 11,
-            'Queen': 12,
-            'King': 13,
-        }
-        if aces_high:
-            self._rank_values['Ace'] = 14
+        self.aces_high = aces_high
         self.suit = suit
         self.rank = rank
 
@@ -100,4 +99,6 @@ class Card():
     def __lt__(self, other):
         if not self._is_valid_operand(other):
             return NotImplemented
+        if not self == other and self.aces_high:
+            return False
         return self._rank_values[self.rank] < self._rank_values[other.rank]

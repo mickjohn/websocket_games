@@ -44,7 +44,6 @@ class GuessOutcome {
             msg['turn'],
             card,
         );
-        console.log(`new item = ${historyItem}`);
 
         return new GuessOutcome(
             msg['player'],

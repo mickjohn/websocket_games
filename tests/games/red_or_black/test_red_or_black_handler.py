@@ -170,21 +170,29 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
     # Guess correct answer
     msg = {'type': 'PlayTurn', 'guess': 'Black'}
     await handler.play_turn(ws1, msg)
-    print(mock_utils_send.msgs)
-    assert mock_utils_send.broadcast == [
-        {
-            'type': 'GuessOutcome',
-            'guess': 'Black',
-            'cards_left': 9,
-            'turn': 0,
+    expected_message = {
+        'type': 'GuessOutcome',
+        'guess': 'Black',
+        'cards_left': 9,
+        'turn': 0,
+        'correct': True,
+        'penalty': handler.penalty_start,
+        'new_penalty': handler.penalty,
+        'outcome': {
+            'card': {'aces_high': False, 'rank': 'Ace', 'suit': 'Clubs'},
             'correct': True,
-            'penalty': handler.penalty_start,
-            'new_penalty': handler.penalty,
-            'player': {
-                'username': p1.username,
-                'active': True,
-            }
+            'guess': 'Black',
+            'penalty': 1,
+            'player': {'active': True, 'username': 'mick'},
+            'turn': 0
+        },
+        'player': {
+            'username': p1.username,
+            'active': True,
         }
+    }
+    assert mock_utils_send.broadcast == [
+        expected_message
     ]
     assert handler.turn == 1
     assert handler.penalty == handler.penalty_start + handler.penalty_increment
