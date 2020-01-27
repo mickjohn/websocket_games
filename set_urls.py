@@ -52,14 +52,13 @@ updates = [
         'tag': '// CHANGEME #1',
         'replacement': f"export const config: Config = new Config('{configs[env]['ws_url']}','{configs[env]['http_url']}'); // CHANGEME #1",
         'file_paths': [
-            'frontend/redorblack/src/config.tsx',
-            'frontend/highorlow/src/config.tsx',
+            'frontend/frontend/src/common/Config.tsx',
         ],
     },
     {
         'tag': '// CHANGEME #2',
         'replacement': f"const websocketBaseUrl = '{configs[env]['ws_url']}' // CHANGEME #2",
-        'file_paths': ['frontend/homepage/src/App/App.tsx'],
+        'file_paths': ['frontend/frontend/src/homepage/components/HomePage/HomePage.tsx'],
     }
 ]
 
