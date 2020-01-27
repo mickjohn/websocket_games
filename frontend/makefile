@@ -1,11 +1,12 @@
-IMAGE_NAME = wbskt_games
+IMAGE_NAME = wbskt_server
 
-all: clean build-website image server
+build: website image
 
-build-website:
-	cd frontend && $(MAKE)
+website:
+	cd frontend;npm run build
 
 build-image : 
+	sudo docker image rm $(IMAGE_NAME) || true && \
 		sudo docker build -t $(IMAGE_NAME) .
 
 image : build-image
@@ -15,7 +16,4 @@ image : build-image
 		rm $(IMAGE_NAME).tar
 
 clean : 
-	rm $(IMAGE_NAME).tar $(IMAGE_NAME).tar.zip||true
-
-server :
-	$(MAKE) -C frontend && mv frontend/wbskt_server.tar.zip .
+	rm $(IMAGE_NAME).tar $(IMAGE_NAME).tar.zip||true && cargo clean
