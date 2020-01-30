@@ -2,7 +2,7 @@ import React from 'react';
 import Player from '../../../common/Player';
 import Guess from '../../utils/guess';
 import './game_screen.css';
-import { GameHistory } from '../../GameHistory'
+import { GameHistory } from '../../../common/GameHistory'
 import DotsThrobber from '../../../common_components/DotsThrobber/dots_throbber';
 import Card from '../../../common/Card';
 

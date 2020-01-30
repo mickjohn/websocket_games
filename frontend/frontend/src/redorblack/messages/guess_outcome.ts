@@ -1,12 +1,12 @@
 import Player from '../../common/Player';
-import { GameHistoryItem } from '../GameHistory';
+import { GameHistoryItem } from '../../common/GameHistory';
 import Card from '../../common/Card';
 
 class GuessOutcome {
     static msgtype = "GuessOutcome";
 
     player: Player;
-    guess: string;
+    guess: "Red" | "Black";
     correct: boolean;
     penalty: number;
     newPenalty: number;
@@ -16,7 +16,7 @@ class GuessOutcome {
 
     constructor(
         player: Player,
-        guess: string,
+        guess: "Red" | "Black",
         correct: boolean,
         penalty: number,
         newPenalty: number,

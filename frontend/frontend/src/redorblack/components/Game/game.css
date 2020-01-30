@@ -40,10 +40,8 @@ body {
 }
 
 .ShowHistoryButton {
-  /* background-color: #20282b; */
   background-color: #fafaf8;
   font-size: 20px;
-  /* color: #fafaf8; */
   color: #20282b;
   padding: 4px 12px;
   border-color: #23b1e6;

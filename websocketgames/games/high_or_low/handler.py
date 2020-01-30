@@ -173,6 +173,7 @@ class HighOrLow(TurnBasedGame):
             player=player,
             cards_left=len(self.deck.cards),
             current_card=self.current_card,
+            outcome=outcome,
         )
 
         self.turn += 1

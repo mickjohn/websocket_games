@@ -3,7 +3,7 @@ import config from '../../../common/Config';
 import Guess from '../../utils/guess';
 import UrlParams from '../../utils/url_params';
 import GameState from '../../utils/game_state';
-import { GameHistory } from '../../GameHistory';
+import { GameHistory } from '../../../common/GameHistory';
 import vibrate from '../../../common/Vibrate';
 import { Stats } from '../GameOver/game_over';
 import parseJsonMessage from '../../messages/parser';

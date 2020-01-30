@@ -3,7 +3,7 @@ IMAGE_NAME = wbskt_server
 build: website image
 
 website:
-	cd frontend; npm install && npm run build
+	make -C frontend/
 
 build-image : 
 	sudo docker image rm $(IMAGE_NAME) || true && \

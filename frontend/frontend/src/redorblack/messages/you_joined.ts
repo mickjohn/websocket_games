@@ -1,5 +1,5 @@
 import GameState from '../utils/game_state';
-import { GameHistory, GameHistoryItem } from '../GameHistory';
+import { GameHistory, GameHistoryItem } from '../../common/GameHistory';
 import { Stats, parseStats } from '../components/GameOver/game_over';
 import Player from '../../common/Player';
 import * as Game from '../components/Game/game';

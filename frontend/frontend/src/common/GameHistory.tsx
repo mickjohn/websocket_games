@@ -1,19 +1,24 @@
+import Card from "./Card";
+import Player from "./Player";
+
 /*
 A class for holding the guess and outcome history of the game
 */
 export class GameHistoryItem {
-    username: string;
-    guess: "High" | "Low";
+    player: Player;
+    guess: string;
     correct: boolean;
     penalty: number;
     turn: number;
+    card: Card;
 
-    constructor(username: string, guess: "High" | "Low", correct: boolean, penalty: number, turn: number) {
-        this.username = username;
+    constructor(player: Player, guess: string, correct: boolean, penalty: number, turn: number, card: Card) {
+        this.player = player;
         this.guess = guess;
         this.correct = correct;
         this.penalty = penalty;
         this.turn = turn;
+        this.card = card;
     }
 
     public toString(): string {

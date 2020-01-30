@@ -1,6 +1,6 @@
 import React from 'react';
 import './history_box.css';
-import { GameHistory } from '../../GameHistory'
+import { GameHistory } from '../../../common/GameHistory'
 
 interface Props {
     game_history: GameHistory,
