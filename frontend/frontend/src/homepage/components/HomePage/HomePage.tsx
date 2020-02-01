@@ -10,7 +10,7 @@ import HighOrLow from '../GameForms/high_or_low';
 import InfoBox from '../InfoBox/info_box';
 import CreateGame from '../CreateGame/create_game';
 
-const websocketBaseUrl = 'ws://192.168.1.7:9000' // CHANGEME #2
+const websocketBaseUrl = 'wss://games.mickjohn.com:8010' // CHANGEME #2
 
 interface Props { };
 
