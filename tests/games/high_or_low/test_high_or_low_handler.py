@@ -1,7 +1,7 @@
-from websocketgames.games.red_or_black.handler import RedOrBlack, GameStates
+from websocketgames.games.high_or_low.handler import HighOrLow, GameStates
 from websocketgames.games.players import Player
 from websocketgames.games.clients import Client
-from websocketgames.games.red_or_black import utils
+from websocketgames.games.high_or_low import utils
 from websocketgames import code_generator, deck
 from tests.games.game_test_utils import MockWebsocket
 
@@ -9,6 +9,7 @@ import pytest
 from pytest_asyncio.plugin import asyncio
 from pytest import fixture
 import jsonpickle
+
 
 @fixture
 def four_player_game_lobby():
@@ -20,7 +21,7 @@ def four_player_game_lobby():
         - Game is in LOBBY state
         - The owner is p1
     '''
-    handler = RedOrBlack('ABCD')
+    handler = HighOrLow('ABCD')
     ws1 = MockWebsocket()
     ws2 = MockWebsocket()
     ws3 = MockWebsocket()
@@ -103,11 +104,11 @@ def mock_utils_send(monkeypatch):
 
     mock_utils = MockUtils()
     monkeypatch.setattr(
-        'websocketgames.games.red_or_black.utils.send_message',
+        'websocketgames.games.high_or_low.utils.send_message',
         mock_utils.send_message,
     )
     monkeypatch.setattr(
-        'websocketgames.games.red_or_black.utils.broadcast_message',
+        'websocketgames.games.high_or_low.utils.broadcast_message',
         mock_utils.broadcast_message,
     )
     return mock_utils
@@ -149,22 +150,24 @@ async def test_play_turn(mock_utils_send, four_player_game_lobby):
     handler.state = GameStates.PLAYING
     handler.turn_sleep_s = 0
     handler.deck.cards = [deck.Card('Ace', 'Clubs')] * 10
+    handler.current_card = deck.Card('King', 'Hearts')
 
     # Guess correct answer
-    msg = {'type': 'PlayTurn', 'guess': 'Black'}
+    msg = {'type': 'PlayTurn', 'guess': 'Low'}
     await handler.play_turn(ws1, msg)
     expected_message = {
         'type': 'GuessOutcome',
-        'guess': 'Black',
+        'guess': 'Low',
         'cards_left': 9,
         'turn': 0,
         'correct': True,
         'penalty': handler.penalty_start,
         'new_penalty': handler.penalty,
+        'current_card': {'aces_high': False, 'rank': 'Ace', 'suit': 'Clubs'},
         'outcome': {
             'card': {'aces_high': False, 'rank': 'Ace', 'suit': 'Clubs'},
             'correct': True,
-            'guess': 'Black',
+            'guess': 'Low',
             'penalty': 1,
             'player': {'active': True, 'username': 'mick'},
             'turn': 0

@@ -33,8 +33,8 @@ _HIGHER_BOUND = _MAX_CODE - _MODULUS + 1
 GAME_MODULUS_TABLE = {
     'RedOrBlack': 0,
     'HighOrLow': 1,
+    'Switch': 2,
 }
-
 
 def generate_code(game):
     return _convert_to_code(_generate_number(game))
