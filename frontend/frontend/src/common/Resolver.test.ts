@@ -1,7 +1,4 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-// import DecodeGameCode from './resolver';
-import * as resolver from './resolver'
+import * as resolver from './Resolver'
 
 it('Can decode a game code', () => {
     // Red or black game code

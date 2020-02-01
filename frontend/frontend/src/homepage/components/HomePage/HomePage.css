@@ -22,7 +22,9 @@
   cursor: pointer;
 }
 
-/* :disabled */
+.HomePage input[type=dropdown] {
+  font-size: 24px;
+}
 
 .HomePage input[type=submit]:disabled {
   background-color: #9b9b9b;

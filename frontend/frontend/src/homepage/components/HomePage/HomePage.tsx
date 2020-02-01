@@ -1,5 +1,5 @@
 import React from 'react';
-import * as resolver from '../../resolver';
+import * as resolver from '../../../common/Resolver';
 import './HomePage.css';
 import Game, { games } from '../../Games';
 
@@ -8,8 +8,8 @@ import ErrorBox from '../ErrorBox/ErrorBox';
 import RedOrBlack from '../GameForms/red_or_black';
 import HighOrLow from '../GameForms/high_or_low';
 import InfoBox from '../InfoBox/info_box';
+import CreateGame from '../CreateGame/create_game';
 
-// const websocketBaseUrl = 'ws://localhost:8080'
 const websocketBaseUrl = 'ws://192.168.1.7:9000' // CHANGEME #2
 
 interface Props { };
@@ -64,6 +64,7 @@ class HomePage extends React.Component<Props, State> {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.createNewGame = this.createNewGame.bind(this);
     this.gameSelectionChanged = this.gameSelectionChanged.bind(this);
+    this.closeCreateGame = this.closeCreateGame.bind(this);
   }
 
   handleChange(event: React.FormEvent<HTMLInputElement>): void {
@@ -337,7 +338,6 @@ class HomePage extends React.Component<Props, State> {
   }
 
   render() {
-    const createGameWindow: JSX.Element | null = this.state.show_create_game ? this.createGameWindow() : null;
     const joinDiv: JSX.Element | null = this.state.show_create_game ? null : this.createJoinDiv();
 
     let infoBox: JSX.Element | null;
@@ -352,10 +352,20 @@ class HomePage extends React.Component<Props, State> {
         <header className="HomePage-header"> games.mickjohn.com </header>
         {infoBox}
         {joinDiv}
-        {createGameWindow}
+        {this.state.show_create_game &&
+          <CreateGame
+            createNewGameHandler={this.createNewGame}
+            closeHandler={this.closeCreateGame}
+          />
+        }
       </div >
     );
   }
+
+  closeCreateGame() {
+    this.setState({ show_create_game: true })
+  }
+
 }
 
 export default HomePage;

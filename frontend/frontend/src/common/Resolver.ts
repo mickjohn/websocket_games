@@ -1,15 +1,14 @@
+import * as Game from '../homepage/Games';
+
 let MODULUS: number = 97;
 let BASE: number = 26;
 let DIGITS: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-let MODULUS_TABLE: Map<number, string> = new Map();
-MODULUS_TABLE.set(0, 'highorlow');
 
 export function DecodeGameCode(game_code: string) {
 
     let index: number = game_code.length - 1;
     if (index < 0) {
-        return null;
+        return -1;
     }
 
     let decoded_number: number = 0;
@@ -21,6 +20,15 @@ export function DecodeGameCode(game_code: string) {
     }
 
     return decoded_number;
+}
+
+export function lookupGame(num: number) : Game.Game | null {
+    let result = Game.gameTable.get(num % MODULUS);
+    if (result === undefined) {
+        return null;
+    } else {
+        return result;
+    }
 }
 
 export default (DecodeGameCode);
