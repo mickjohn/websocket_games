@@ -315,7 +315,7 @@ class Game extends React.Component<Props, State>   {
             }
 
             const items = this.state.game_history;
-            items.addItem(parsed_message.createGameHistoryItem());
+            items.addItem(parsed_message.historyItem);
 
             // Update the turn number and history
             // Don't accidently clear the penalty

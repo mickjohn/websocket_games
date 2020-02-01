@@ -1,4 +1,4 @@
-import * as Game from '../homepage/Games';
+import * as Game from './Games';
 
 let MODULUS: number = 97;
 let BASE: number = 26;

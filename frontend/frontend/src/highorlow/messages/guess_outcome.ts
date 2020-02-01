@@ -61,11 +61,6 @@ class GuessOutcome {
             historyItem,
         );
     }
-
-    createGameHistoryItem(): GameHistoryItem {
-        return this.historyItem;
-
-    }
 }
 
 export default GuessOutcome;

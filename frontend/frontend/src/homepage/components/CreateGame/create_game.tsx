@@ -1,7 +1,7 @@
 import React from 'react';
 import RedOrBlack from '../GameForms/red_or_black';
 import HighOrLow from '../GameForms/high_or_low';
-import { games } from '../../Games';
+import { games } from '../../../common/Games';
 
 interface Props {
     createNewGameHandler: (path: string, data: any) => void;
@@ -24,7 +24,7 @@ export class CreateGame extends React.Component<Props, State> {
 
     render() {
         const options = games.map((game) =>
-            <option value={game.path}>{game.displayName}</option>
+            <option key={game.displayName} value={game.path}>{game.displayName}</option>
         );
 
         let formElement: JSX.Element | null = null;

@@ -1,12 +1,10 @@
 import React from 'react';
 import * as resolver from '../../../common/Resolver';
 import './HomePage.css';
-import Game, { games } from '../../Games';
+import Game, { games } from '../../../common/Games';
 
 import Spinner from '../Spinner/Spinner';
 import ErrorBox from '../ErrorBox/ErrorBox';
-import RedOrBlack from '../GameForms/red_or_black';
-import HighOrLow from '../GameForms/high_or_low';
 import InfoBox from '../InfoBox/info_box';
 import CreateGame from '../CreateGame/create_game';
 
@@ -192,6 +190,7 @@ class HomePage extends React.Component<Props, State> {
 
   /* Connect to Websocket server and create a new game */
   createNewGame(path: string, data: any) {
+    this.setState({ error_msg: "" });
     const websocketUrl = `${websocketBaseUrl}/${path}`;
     console.info("websocket URL = " + websocketUrl);
     const websocket: WebSocket = new WebSocket(websocketUrl);
@@ -276,43 +275,6 @@ class HomePage extends React.Component<Props, State> {
     let newValue: string = e.currentTarget.value;
     console.log(`Target value = ${newValue}`);
     this.setState({ selected_game: newValue });
-  }
-
-  createGameWindow() {
-    const options = games.map((game) =>
-      <option value={game.path}>{game.displayName}</option>
-    );
-
-    let formElement: JSX.Element | null = null;
-    switch (this.state.selected_game) {
-      case "redorblack":
-        formElement = <RedOrBlack submitHandler={this.createNewGame} />;
-        break;
-      case "highorlow":
-        formElement = <HighOrLow submitHandler={this.createNewGame} />;
-        break;
-      default:
-        break;
-    }
-
-    return (
-      <div>
-        <select onInput={this.gameSelectionChanged} name="game">
-          {options}
-        </select>
-
-        {formElement}
-
-        <button
-          className="CancelButton"
-          onClick={() => this.setState({ show_create_game: false })}
-        >
-          cancel
-        </button>
-
-        <h3>{this.state.creating_game_message}</h3>
-      </div>
-    )
   }
 
   createJoinDiv() {
