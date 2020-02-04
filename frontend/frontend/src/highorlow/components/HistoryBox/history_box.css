@@ -1,26 +1,30 @@
 .HistoryBox {
-    margin: 5px;
-    border: 2px solid #ffe66d;
     overflow: auto;
-    height: 300px;
+    max-height: 60vh;
 }
 
 .HistoryBox table {
     width: 100%;
     border-collapse: collapse;
+    border-top: 1px solid #ffe66d;
+    border-bottom: 1px solid #ffe66d;
 }
 
 .HistoryBox tr {
     border-bottom: 2px solid #ffe66d;
+    font-size: 20px;
 }
 
-.HistoryBox tr:last-child {
+/* .HistoryBox tr:last-child {
     border: none;
+} */
+.HistoryBox tr:nth-child(even) {
+    background-color: #344146;
 }
 
-.username {
+/* .username {
     padding: 10px;
-}
+} */
 
 .high-guess {
     border-radius: 25px;

@@ -1,6 +1,5 @@
 .HistoryBox {
     overflow: auto;
-    /* height: 120px; */
     max-height: 60vh;
 }
 
