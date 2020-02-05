@@ -162,3 +162,17 @@ async def test_handle_close(mock_utils_send, four_player_game_lobby):
             {'username': 'dracula', 'active': True}
         ]}
     ]
+
+@pytest.mark.asyncio
+async def test_check_player_and_notify(mock_utils_send, four_player_game_lobby):
+    (handler, websockets, __players) = four_player_game_lobby
+    (ws1, *__) = websockets
+    handler.state = GameStates.PLAYING
+    assert await handler.check_player_and_notify(ws1)
+
+@pytest.mark.asyncio
+async def test_check_player_and_notify_sends_message_when_no_player(mock_utils_send, four_player_game_lobby):
+    (handler, __, __) = four_player_game_lobby
+    handler.state = GameStates.PLAYING
+    non_existing_ws = MockWebsocket()
+    assert await handler.check_player_and_notify(non_existing_ws) == False

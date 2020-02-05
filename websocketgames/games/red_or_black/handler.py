@@ -96,6 +96,24 @@ class RedOrBlack(TurnBasedGame):
         self.state = GameStates.PLAYING
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
+    async def can_play_turn(self, websocket, player):
+        order = self.p_reg.get_order()
+        current_player = self.p_reg.get_order()[self.turn % len(order)]
+        if self.state != GameStates.PLAYING:
+            logger.error(f"Game is not in playing state")
+            await utils.send_message(websocket, 'GameNotStarted')
+            return False
+
+        if player != current_player:
+            logger.error(f"It's not the turn of '{player.username}'")
+            await utils.send_message(websocket, 'NotPlayerTurn')
+            return False
+
+        if not len(self.deck.cards):
+            logger.error('No cards left!')
+            return False
+        return True
+
     async def play_turn(self, websocket, msg):
         '''
         Take a players guess and progress the game by one turn, and send the
@@ -104,33 +122,19 @@ class RedOrBlack(TurnBasedGame):
         # Before processing the turn, sleep for some time to add to the suspense
         await asyncio.sleep(self.turn_sleep_s)
         logger.debug('Playing turn')
-        if websocket not in self.c_reg.clients:
-            await utils.send_user_not_found(websocket)
-            return
 
-        if self.c_reg.clients[websocket].player is None:
-            await utils.send_user_not_found(websocket)
+        # Check if the websocket exists and has a player
+        if not await self.check_player_and_notify(websocket):
             return
 
         player = self.c_reg.clients[websocket].player
-        order = self.p_reg.get_order()
-        current_player = self.p_reg.get_order()[self.turn % len(order)]
+
+        # Check if the player can play this turn
+        if not await self.can_play_turn(websocket, player):
+            return
+
+        # The penalty returned to the player
         return_penalty = self.penalty
-
-        if self.state != GameStates.PLAYING:
-            logger.error(f"Game is not in playing state")
-            await utils.send_message(websocket, 'GameNotStarted')
-            return
-
-        if player != current_player:
-            logger.error(f"It's not the turn of '{player.username}'")
-            await utils.send_message(websocket, 'NotPlayerTurn')
-            return
-
-        if not len(self.deck.cards):
-            logger.error('No cards left!')
-            return
-
         guess = msg['guess']
         card = self.deck.draw_card()
         correct = guess == card.get_colour()

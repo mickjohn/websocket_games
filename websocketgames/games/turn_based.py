@@ -166,3 +166,18 @@ class TurnBasedGame():
             order=self.p_reg.get_order()
         )
         return player
+
+    async def check_player_and_notify(self, websocket):
+        '''
+        Check if a player exists for the websocket. If not, senf an error
+        message and return False, otherwise return True.
+        '''
+        if websocket not in self.c_reg.clients:
+            await utils.send_user_not_found(websocket)
+            return False
+
+        if self.c_reg.clients[websocket].player is None:
+            await utils.send_user_not_found(websocket)
+            return False
+
+        return True
