@@ -46,9 +46,10 @@ class WebsocketServer():
         try:
             async for message in websocket:
                 try:
+                    logger.debug(f"message = {message}")
                     data = json.loads(message)
-                    logger.debug(f"data = {data}")
                 except json.decoder.JSONDecodeError:
+                    await websocket.send(str({'type': 'Error', 'message': 'Invalid JSON'}))
                     raise Exception('Invalid JSON')
 
                 if data['type'] == 'CreateGame':
