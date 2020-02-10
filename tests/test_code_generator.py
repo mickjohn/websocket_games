@@ -1,7 +1,6 @@
 from websocketgames import code_generator
 from websocketgames.code_generator import GameNotFound
 import pytest
-from pytest import fixture
 
 
 class RedOrBlack():
@@ -19,7 +18,7 @@ class DefinitelyNotRegistered():
 def test_exception_raised_if_game_not_registered(monkeypatch):
     monkeypatch.setattr(code_generator, 'GAME_MODULUS_TABLE', {})
     with pytest.raises(Exception) as e:
-        __d = DefinitelyNotRegistered()
+        DefinitelyNotRegistered()
     assert "DefinitelyNotRegistered not registered in GAME_MODULUS_TABLE" in str(
         e.value)
 

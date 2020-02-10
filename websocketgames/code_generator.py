@@ -36,6 +36,7 @@ GAME_MODULUS_TABLE = {
     'Switch': 2,
 }
 
+
 def generate_code(game):
     return _convert_to_code(_generate_number(game))
 

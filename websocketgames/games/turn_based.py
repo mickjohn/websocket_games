@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import uuid
-import jsonpickle
 
 from websocketgames.games.clients import ClientRegistery
 from websocketgames.games.players import Player, PlayerRegistery

@@ -1,6 +1,5 @@
 from websocketgames import main
 from websocketgames.server import WebsocketServer
-from pytest_asyncio.plugin import asyncio
 import pytest
 import websockets
 import logging
@@ -12,6 +11,7 @@ logger = logging.getLogger('websocketgames')
 logger.addHandler(handler)
 fmt = '%(asctime)s %(name)s:%(module)s %(message)s'
 coloredlogs.install(logger=logger, level='DEBUG', fmt=fmt)
+
 
 @pytest.mark.asyncio
 async def test_invalid_json_message_returned(unused_tcp_port):

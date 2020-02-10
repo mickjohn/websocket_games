@@ -3,6 +3,7 @@ from websocketgames.games import utils
 import jsonpickle
 from pytest import fixture
 
+
 class MockWebsocket():
     def __init__(self):
         self.message_stack = []
@@ -19,6 +20,7 @@ class MockWebsocket():
 
     async def close(self):
         self.open = False
+
 
 @fixture
 def mock_utils_send(monkeypatch):

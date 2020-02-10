@@ -77,7 +77,7 @@ def test_stats_get_stats(outcomes):
         stats.update(outcome)
 
     expected = {
-        'best_players':  {
+        'best_players': {
             1: {'score': 3, 'usernames': 'mick'},
             2: {'score': 1, 'usernames': 'john'},
             3: {'score': 0, 'usernames': 'dracula'},

@@ -1,12 +1,9 @@
 from websocketgames.games.base_card_guessing_game.handler import BaseCardGuessingGame, GameStates
 from websocketgames.games.players import Player
-from websocketgames.games.clients import Client
 from websocketgames.games import utils
-from websocketgames import code_generator, deck
 from tests.games.game_test_utils import MockWebsocket
 
 import pytest
-from pytest_asyncio.plugin import asyncio
 from pytest import fixture
 import jsonpickle
 

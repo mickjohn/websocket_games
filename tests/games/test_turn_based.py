@@ -1,11 +1,7 @@
 from websocketgames.games.red_or_black import RedOrBlack
 from websocketgames.games.base_card_guessing_game.states import GameStates
 from websocketgames.games.players import Player
-from websocketgames.games.clients import Client
-from websocketgames.games import utils
-from websocketgames import code_generator, deck
 import pytest
-from pytest_asyncio.plugin import asyncio
 from pytest import fixture
 import jsonpickle
 
@@ -107,6 +103,7 @@ async def test_handle_close(mock_utils_send, four_player_game_lobby):
         ]}
     ]
 
+
 @pytest.mark.asyncio
 async def test_check_player_and_notify(mock_utils_send, four_player_game_lobby):
     (handler, websockets, __players) = four_player_game_lobby
@@ -114,9 +111,10 @@ async def test_check_player_and_notify(mock_utils_send, four_player_game_lobby):
     handler.state = GameStates.PLAYING
     assert await handler.check_player_and_notify(ws1)
 
+
 @pytest.mark.asyncio
 async def test_check_player_and_notify_sends_message_when_no_player(mock_utils_send, four_player_game_lobby):
     (handler, __, __) = four_player_game_lobby
     handler.state = GameStates.PLAYING
     non_existing_ws = MockWebsocket()
-    assert await handler.check_player_and_notify(non_existing_ws) == False
+    assert await handler.check_player_and_notify(non_existing_ws) is False
