@@ -12,7 +12,7 @@ class GuessOutcome {
     newPenalty: number;
     cardsLeft: number;
     turn: number;
-    currentCard: Card;
+    currentCard: Card | undefined;
     historyItem: GameHistoryItem;
 
     constructor(
@@ -23,7 +23,7 @@ class GuessOutcome {
         newPenalty: number,
         cardsLeft: number,
         turn: number,
-        currentCard: Card,
+        currentCard: Card | undefined,
         historyItem: GameHistoryItem,
     ) {
         this.player = player;
@@ -48,7 +48,14 @@ class GuessOutcome {
             card,
         );
 
-        let currentCard = new Card(msg['current_card']['suit'], msg['current_card']['rank']);
+        let outcomeItem = msg['outcome'];
+        let currentCard: Card | undefined;
+        if (outcomeItem['faceup_card'] == null) {
+            currentCard = undefined;
+        } else {
+            currentCard = new Card(outcomeItem['faceup_card']['suit'], outcomeItem['faceup_card']['rank']);
+        }
+
         return new GuessOutcome(
             msg['player'],
             msg['guess'],

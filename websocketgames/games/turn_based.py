@@ -1,10 +1,11 @@
 import asyncio
 import logging
 import uuid
+import jsonpickle
 
 from websocketgames.games.clients import ClientRegistery
 from websocketgames.games.players import Player, PlayerRegistery
-from websocketgames.games.red_or_black import utils
+from websocketgames.games import utils
 
 from collections import defaultdict
 

@@ -55,7 +55,7 @@ class YouJoined {
         const history = new GameHistory();
         const turn: number = gameState['turn'];
         const order: Player[] = gameState['order'];
-        const currentCard: Card = new Card(gameState['current_card']['suit'], gameState['current_card']['rank']);
+        const currentCard: Card = new Card(gameState['faceup_card']['suit'], gameState['faceup_card']['rank']);
         const penalty: number = gameState['penalty'];
         const cardsLeft: number = gameState['cards_left'];
         let stats: Stats | null = null;

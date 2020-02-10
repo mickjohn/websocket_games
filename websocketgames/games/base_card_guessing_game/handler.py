@@ -1,33 +1,36 @@
 import logging
 import asyncio
 
-
-from websocketgames.deck import Deck
-from websocketgames.games.high_or_low import validator
-from websocketgames.games.high_or_low import utils
 from websocketgames.games.turn_based import TurnBasedGame
-from websocketgames.games.high_or_low.states import GameStates
-from websocketgames.games.high_or_low.stats import Outcome, Stats
+from websocketgames.deck import Deck
+from websocketgames.games.base_card_guessing_game import validator
+from websocketgames.games import utils
+from websocketgames.games.base_card_guessing_game.states import GameStates
+from websocketgames.games.base_card_guessing_game.stats import Outcome, Stats
 
 logger = logging.getLogger('websocketgames')
 
 
-class HighOrLow(TurnBasedGame):
+class BasicCardGuessingGame(TurnBasedGame):
 
-    def __init__(self, game_code, cleanup_handler=None, options={}):
+    def __init__(self, game_code, validate_guess, faceup_start=False, cleanup_handler=None, options={}):
         super().__init__(game_code, cleanup_handler, timeout_seconds=30)
         self.turn = 0
         self.turn_sleep_s = 1
         self.end_sleep_s = 1
         self.state = GameStates.LOBBY
-        self.owner = None
         self.deck = Deck(shuffled=True)
         self.deck.cards = self.deck.cards[0:options.get('number_of_cards', 52)]
-        self.current_card = self.deck.draw_card()
+
+        if faceup_start:
+            self.faceup_card = self.deck.draw_card()
+        else:
+            self.faceup_card = None
         self.penalty_increment = options.get('penalty_increment', 1)
         self.penalty_start = options.get('penalty_start', 1)
         self.penalty = options.get('penalty_start', 1)
         self.shutting_down = False
+        self.validate_guess = validate_guess
         self.stats = Stats()
 
         # Asyncio task for the cleanup callback
@@ -41,6 +44,7 @@ class HighOrLow(TurnBasedGame):
             f"[{self.game_code}]: owner: {self.owner}\n"
             f"[{self.game_code}]: order: {self.p_reg.get_order()}\n"
             f"[{self.game_code}]: cards left: {len(self.deck.cards)}\n"
+            f"[{self.game_code}]: faceup card: {self.faceup_card}\n"
             f"[{self.game_code}]: player registery: {self.p_reg}\n"
             f"[{self.game_code}]: client registery: {self.c_reg}\n"
             f"[{self.game_code}]: history: {self.get_full_game_state()}\n"
@@ -99,6 +103,24 @@ class HighOrLow(TurnBasedGame):
         self.state = GameStates.PLAYING
         await utils.broadcast_message(self.c_reg.websockets(), 'GameStarted')
 
+    async def can_play_turn(self, websocket, player):
+        order = self.p_reg.get_order()
+        current_player = self.p_reg.get_order()[self.turn % len(order)]
+        if self.state != GameStates.PLAYING:
+            logger.error(f"Game is not in playing state")
+            await utils.send_message(websocket, 'GameNotStarted')
+            return False
+
+        if player != current_player:
+            logger.error(f"It's not the turn of '{player.username}'")
+            await utils.send_message(websocket, 'NotPlayerTurn')
+            return False
+
+        if not len(self.deck.cards):
+            logger.error('No cards left!')
+            return False
+        return True
+
     async def play_turn(self, websocket, msg):
         '''
         Take a players guess and progress the game by one turn, and send the
@@ -107,55 +129,29 @@ class HighOrLow(TurnBasedGame):
         # Before processing the turn, sleep for some time to add to the suspense
         await asyncio.sleep(self.turn_sleep_s)
         logger.debug('Playing turn')
-        if websocket not in self.c_reg.clients:
-            await utils.send_user_not_found(websocket)
-            return
 
-        if self.c_reg.clients[websocket].player is None:
-            await utils.send_user_not_found(websocket)
-            return
-
-        guess = msg['guess']
-        if guess not in ['High', 'Low']:
-            await utils.send_message(
-                websocket,
-                'Error',
-                error=f"Guess must be 'High' or 'Low', got '{guess}'"
-            )
+        # Check if the websocket exists and has a player
+        if not await self.check_player_and_notify(websocket):
             return
 
         player = self.c_reg.clients[websocket].player
-        order = self.p_reg.get_order()
-        current_player = self.p_reg.get_order()[self.turn % len(order)]
+
+        # Check if the player can play this turn
+        if not await self.can_play_turn(websocket, player):
+            return
+
+        # The penalty returned to the player
         return_penalty = self.penalty
-
-        if self.state != GameStates.PLAYING:
-            logger.error(f"Game is not in playing state")
-            await utils.send_message(websocket, 'GameNotStarted')
-            return
-
-        if player != current_player:
-            logger.error(f"It's not the turn of '{player.username}'")
-            await utils.send_message(websocket, 'NotPlayerTurn')
-            return
-
-        if not len(self.deck.cards):
-            logger.error('No cards left!')
-            return
-
+        guess = msg['guess']
         card = self.deck.draw_card()
-        if guess == 'High':
-            correct = card > self.current_card
-        else:
-            correct = card < self.current_card
-        self.current_card = card
-
-        logger.debug(
+        correct = self.validate_guess(guess, card, self.faceup_card)
+        logger.info(
             f"guess for {player.username}: card={card} guess={guess} correct={correct}")
 
         outcome = Outcome(player, self.turn, guess,
-                          correct, card, return_penalty)
+                          correct, return_penalty, card, self.faceup_card)
         self.stats.update(outcome)
+        self.faceup_card = card
 
         if correct:
             self.penalty += self.penalty_increment
@@ -172,7 +168,6 @@ class HighOrLow(TurnBasedGame):
             new_penalty=self.penalty,
             player=player,
             cards_left=len(self.deck.cards),
-            current_card=self.current_card,
             outcome=outcome,
         )
 
@@ -202,9 +197,9 @@ class HighOrLow(TurnBasedGame):
             'order': self.p_reg.get_order(),
             'stats': self.stats.get_stats(),
             'history': self.stats.outcomes,
-            'current_card': self.current_card,
             'penalty': self.penalty,
             'cards_left': len(self.deck.cards),
+            'faceup_card': self.faceup_card,
         }
         return state
 

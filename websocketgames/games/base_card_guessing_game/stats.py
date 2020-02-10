@@ -4,13 +4,14 @@ from itertools import groupby
 
 class Outcome:
 
-    def __init__(self, player, turn, guess, correct, card, penalty):
+    def __init__(self, player, turn, guess, correct, penalty, card, faceup_card):
         self.player = player
         self.turn = turn
         self.guess = guess
         self.correct = correct
         self.card = card
         self.penalty = penalty
+        self.faceup_card = faceup_card
 
 
 class Stats:
