@@ -56,5 +56,5 @@ def test_validator_fails_when_type_is_unkown(set_allowed_messages):
 
 
 def test_validator_fails_when_msg_is_incorrect(set_allowed_messages, set_schemas):
-    with pytest.raises(ValidationError) as e:
+    with pytest.raises(ValidationError) as _e:
         validator.validate_msg({'type': 'CreateGame', 'extra': 'data'})

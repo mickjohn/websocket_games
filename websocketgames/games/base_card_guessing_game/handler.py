@@ -11,9 +11,9 @@ from websocketgames.games.base_card_guessing_game.stats import Outcome, Stats
 logger = logging.getLogger('websocketgames')
 
 
-class BasicCardGuessingGame(TurnBasedGame):
+class BaseCardGuessingGame(TurnBasedGame):
 
-    def __init__(self, game_code, validate_guess, faceup_start=False, cleanup_handler=None, options={}):
+    def __init__(self, game_code, validate_guess=None, faceup_start=False, cleanup_handler=None, options={}):
         super().__init__(game_code, cleanup_handler, timeout_seconds=30)
         self.turn = 0
         self.turn_sleep_s = 1
@@ -30,7 +30,6 @@ class BasicCardGuessingGame(TurnBasedGame):
         self.penalty_start = options.get('penalty_start', 1)
         self.penalty = options.get('penalty_start', 1)
         self.shutting_down = False
-        self.validate_guess = validate_guess
         self.stats = Stats()
 
         # Asyncio task for the cleanup callback
@@ -52,6 +51,9 @@ class BasicCardGuessingGame(TurnBasedGame):
 
     def _debug(self):
         logger.debug(self)
+
+    def validate_guess(self, guess, card, faceup_card):
+        raise NotImplementedError
 
     async def handle_message(self, json_dict, websocket):
         if json_dict['type'] == 'Debug':

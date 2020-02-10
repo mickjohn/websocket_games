@@ -1,4 +1,4 @@
-from websocketgames.games.base_card_guessing_game.handler import BasicCardGuessingGame, GameStates
+from websocketgames.games.base_card_guessing_game.handler import BaseCardGuessingGame, GameStates
 from websocketgames.games.players import Player
 from websocketgames.games.clients import Client
 from websocketgames.games import utils
@@ -10,8 +10,10 @@ from pytest_asyncio.plugin import asyncio
 from pytest import fixture
 import jsonpickle
 
+
 def validate_guess_fn(*args):
     return True
+
 
 @fixture
 def four_player_game_lobby():
@@ -23,7 +25,7 @@ def four_player_game_lobby():
         - Game is in LOBBY state
         - The owner is p1
     '''
-    handler = BasicCardGuessingGame('ABCD', validate_guess_fn)
+    handler = BaseCardGuessingGame('ABCD', validate_guess_fn)
     ws1 = MockWebsocket()
     ws2 = MockWebsocket()
     ws3 = MockWebsocket()
@@ -141,49 +143,6 @@ async def test_start_game_fails_is_user_is_not_owner(mock_utils_send, four_playe
             'error': 'User with id 456 not allowed to start the game'
         }
     ]
-
-
-@pytest.mark.asyncio
-async def test_play_turn(mock_utils_send, four_player_game_lobby):
-    (handler, websockets, players) = four_player_game_lobby
-    (ws1, *_) = websockets
-    (p1, *_) = players
-    # Set cards to something we know
-    handler.state = GameStates.PLAYING
-    handler.turn_sleep_s = 0
-    handler.deck.cards = [deck.Card('Ace', 'Clubs')] * 10
-
-    # Guess correct answer
-    msg = {'type': 'PlayTurn', 'guess': 'Black'}
-    await handler.play_turn(ws1, msg)
-    expected_message = {
-        'type': 'GuessOutcome',
-        'guess': 'Black',
-        'cards_left': 9,
-        'turn': 0,
-        'correct': True,
-        'penalty': handler.penalty_start,
-        'new_penalty': handler.penalty,
-        'outcome': {
-            'card': {'aces_high': False, 'rank': 'Ace', 'suit': 'Clubs'},
-            'faceup_card': None,
-            'correct': True,
-            'guess': 'Black',
-            'penalty': 1,
-            'player': {'active': True, 'username': 'mick'},
-            'turn': 0
-        },
-        'player': {
-            'username': p1.username,
-            'active': True,
-        }
-    }
-
-    assert mock_utils_send.broadcast == [
-        expected_message
-    ]
-    assert handler.turn == 1
-    assert handler.penalty == handler.penalty_start + handler.penalty_increment
 
 
 @pytest.mark.asyncio
