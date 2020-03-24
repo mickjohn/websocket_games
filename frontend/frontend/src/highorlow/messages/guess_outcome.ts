@@ -50,10 +50,10 @@ class GuessOutcome {
 
         let outcomeItem = msg['outcome'];
         let currentCard: Card | undefined;
-        if (outcomeItem['faceup_card'] == null) {
+        if (outcomeItem['card'] == null) {
             currentCard = undefined;
         } else {
-            currentCard = new Card(outcomeItem['faceup_card']['suit'], outcomeItem['faceup_card']['rank']);
+            currentCard = new Card(outcomeItem['card']['suit'], outcomeItem['card']['rank']);
         }
 
         return new GuessOutcome(
