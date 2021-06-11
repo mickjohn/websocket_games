@@ -5,4 +5,4 @@ jsonpickle==1.2
 jsonschema==3.2.0
 pyrsistent==0.15.6
 six==1.13.0
-websockets==8.1
+websockets==9.1
